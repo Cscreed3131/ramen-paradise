@@ -6,7 +6,7 @@ export class AuthService {
         this.auth = auth;
     }
 
-    async signup(email,password) {
+    async signup({email,password}) {
         try {
             const userCredentials = await createUserWithEmailAndPassword(this.auth,email,password)
             return userCredentials.user;
@@ -16,7 +16,7 @@ export class AuthService {
         }
     }
 
-    async signin(email,password){
+    async signin({email,password}){
         try {
             const userCredentials = await signInWithEmailAndPassword(this.auth,email,password)
             return userCredentials.user;
@@ -26,23 +26,24 @@ export class AuthService {
         }
     }
 
-    getCurrentUserId(){
-        try {
-            if (this.auth.currentUser) {
-                return this.auth.currentUser.uid;
-            } else {
-                return null; // No user is signed in
-            }
-        } catch (error) {
-            console.log("Error: AuthService :: getCurrentUserId :: ",error);
-            throw error;
+    // getCurrentUserId(){
+    //     try {
+    //         if (this.auth.currentUser) {
+    //             return this.auth.currentUser.uid;
+    //         } else {
+    //             return null; // No user is signed in
+    //         }
+    //     } catch (error) {
+    //         console.log("Error: AuthService :: getCurrentUserId :: ",error);
+    //         throw error;
             
-        }
-    }
+    //     }
+    // }
 
     getCurrentUser() {
         return new Promise((resolve, reject) => {
             onAuthStateChanged(this.auth, (user) => {
+                console.log("AuthService :: getCurrentUser :: user:", user); // Log the user object
                 if (user) {
                     resolve(user); 
                 } else {
