@@ -3,7 +3,7 @@ import Dashboard from './subComponents/Dashboard'
 
 function Content({activeItem}) {
   return (
-    <div className='flex flex-col'>
+    <div className='flex flex-col overflow-y-auto max-h-screen'>
         { activeItem === 'Dashboard' && <Dashboard />}
         {
           activeItem === 'Settings' && (

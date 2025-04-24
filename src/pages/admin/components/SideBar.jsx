@@ -11,7 +11,7 @@ function SideBar({ activeItem , setActiveItem }) {
     };
 
     return (
-        <div className="h-full p-4 bg-gray-800 flex flex-col justify-between">
+        <div className="h-screen p-4 bg-gray-800 flex flex-col justify-between">
             <div>
                 <div className="flex flex-col justify-center items-center mb-4">
                     <img

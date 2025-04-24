@@ -5,7 +5,7 @@ function AdminPage() {
   const [activeItem, setActiveItem] = useState('Dashboard');
 
   return (
-    <div className='w-full h-screen font-mono grid grid-cols-[1fr_4fr] text-white bg-black'>
+    <div className='font-mono grid grid-cols-[1fr_4fr] text-white bg-black'>
       <SideBar activeItem={activeItem} setActiveItem={setActiveItem} />
       {/* Main component of the page. */}
       <Content activeItem={activeItem} />
