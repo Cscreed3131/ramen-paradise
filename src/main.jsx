@@ -5,7 +5,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { Provider } from 'react-redux'
 import store from './Store/store'
-
+import {AuthLayout} from './components/index.js'
 import AuthPage from './pages/AuthPage'
 
 const router = createBrowserRouter([
@@ -17,7 +17,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/auth-page',
-    element: <AuthPage />
+    element: (
+      <AuthLayout authentication={false}>
+        <AuthPage />
+      </AuthLayout>
+    )
   },
 ])
 

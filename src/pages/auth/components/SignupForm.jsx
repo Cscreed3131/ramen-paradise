@@ -1,75 +1,108 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import authService  from "../../../features/authSlice";
+import authService  from "../../../firebase/AuthService";
+import { Link,useNavigate } from "react-router-dom";
+import { Button,Input,Logo } from "../../../components";
+import { useForm } from "react-hook-form";
+import { signin } from "../../../features/authSlice";
 
 export default function SignupForm({ onToggle }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [error,setError] = React.useState(null);
+  const {register,handleSubmit} = useForm();
+
+  const create = async (data) => {
+    setError("");
+
+    // Check if passwords match
+    if (data.password !== data.confirmPassword) {
+        setError("Passwords do not match");
+        return;
+    }
+
+    try {
+        const userData = await authService.signup(data);
+        if (userData) {
+            const user = await authService.getCurrentUserId();
+            if (user) {
+                console.info("SignupForm:: userdata:: ",user)
+                dispatch(signin(user));
+            }
+            navigate("/");
+        }
+    } catch (error) {
+        setError(error.message);
+    }
+};
+
   return (
-    <form className="mt-6">
+    <form className="mt-6" onSubmit={handleSubmit(create)}>
       <div className="flex flex-col gap-2">
         {/* Email Input */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
+          <Input
+            label="Email"
             id="email"
             type="email"
             placeholder="m@example.com"
-            required
+            {...register("email", { required: true,
+              validate: (value) => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(value) || "Invalid email address";
+              },
+            })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         {/* Password Input */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <input
+          <Input
+            label="Password"
             id="password"
             type="password"
-            required
+            placeholder="Enter your password"
+            {...register("password", { required: true })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         {/* Confirm Password Input */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">
-            Confirm Password
-          </label>
-          <input
+        <Input
+            label="Confirm password"
             id="confirm-password"
             type="password"
-            required
+            placeholder="Enter your password"
+            {...register("confirmPassword", { required: true })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         {/* Sign-up Button */}
-        <button
+        <Button
           type="submit"
           className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
           onClick={()=>{handleSubmit}}
         >
           Sign-up
-        </button>
+        </Button>
         {/* Google Sign-up Button */}
-        <button
+        <Button
           type="button"
           className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-300"
         >
           Sign-up with Google
-        </button>
+        </Button>
       </div>
       {/* Toggle to Signin */}
       <div className="mt-4 text-center text-sm text-gray-600">
         Already have an account?{" "}
-        <button
+        <Button
           type="button"
           onClick={onToggle}
           className="text-blue-500 hover:underline"
         >
           Sign in
-        </button>
+        </Button>
       </div>
     </form>
   );

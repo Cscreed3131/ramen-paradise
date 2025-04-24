@@ -26,26 +26,11 @@ export class AuthService {
         }
     }
 
-    // getCurrentUserId(){
-    //     try {
-    //         if (this.auth.currentUser) {
-    //             return this.auth.currentUser.uid;
-    //         } else {
-    //             return null; // No user is signed in
-    //         }
-    //     } catch (error) {
-    //         console.log("Error: AuthService :: getCurrentUserId :: ",error);
-    //         throw error;
-            
-    //     }
-    // }
-
-    getCurrentUser() {
+    getCurrentUserId() {
         return new Promise((resolve, reject) => {
             onAuthStateChanged(this.auth, (user) => {
-                console.log("AuthService :: getCurrentUser :: user:", user); // Log the user object
                 if (user) {
-                    resolve(user); 
+                    resolve(user.uid); 
                 } else {
                     resolve(null); 
                 }
@@ -58,9 +43,9 @@ export class AuthService {
     async signout(){
         try {
             await signOut(this.auth)
-            console.log("signout success")
+            console.info("signout success")
         } catch (error) {
-            console.log("Error: AuthService :: signout :: ",error);
+            console.warn("Error: AuthService :: signout :: ",error);
             throw error;
         }
     }

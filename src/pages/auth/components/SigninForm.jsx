@@ -18,7 +18,7 @@ export default function SigninForm({ onToggle }) {
     try{
       const session = await authService.signin(data)
       if(session){
-        const userData = await authService.getCurrentUser()
+        const userData = await authService.getCurrentUserId()
         if(userData){
           dispatch(authSignin(userData))
         }

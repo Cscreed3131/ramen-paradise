@@ -9,7 +9,7 @@ import CardDescription from "./Card/CardDescription";
 import CardTitle from "./Card/CardTitle";
 import Button from "./Button";
 import Input from "./Input";
-
+import AuthLayout from "./AuthLayout"
 export { 
     Header,
     Footer, 
@@ -22,4 +22,5 @@ export {
     CardContent,
     Button,
     Input,
+    AuthLayout,
 };
