@@ -7,7 +7,19 @@ import { Provider } from 'react-redux'
 import store from './Store/store'
 import {AuthLayout} from './components/index.js'
 import AuthPage from './pages/AuthPage'
-import AdminPage from './pages/AdminPage.jsx'
+import AdminPage from './pages/AdminPage'
+import { 
+  Dashboard,
+  AddProduct,
+  EditProduct, 
+  ProductList,
+  Products,
+  Profile,
+  RemoveProduct,
+  Settings, 
+  Orders,
+  Customers,
+  Restaurants} from './pages/admin/components/adminComponents.jsx'
 
 const router = createBrowserRouter([
   {
@@ -25,9 +37,70 @@ const router = createBrowserRouter([
     )
   },
   {
-    path: '/admin-page',
+    path: '/admin',
     element: <AdminPage />,
-    children:[]
+    children:[
+      {
+        path: 'dashboard',
+        element: <Dashboard />,
+        children:[
+          {
+            path: 'products',
+            element: <Products />,
+          },
+          {
+            path: 'products/product-list',
+            element: <ProductList />,
+          }, 
+          {
+            path: 'products/add-product',
+            element: <AddProduct />,
+          }, 
+          {
+            path: 'products/remove-product',
+            element: <RemoveProduct />
+          },
+          {
+            path: 'products/edit-product',
+            element: <EditProduct />
+          },
+          {
+            path: 'products/Best-seller',
+            element: <ProductList />
+          },
+          {
+            path: 'orders',
+            element: <Orders />,
+          },
+          {
+            path: 'customers',
+            element: <Customers />,
+          },
+          {
+            path: 'restaurants',
+            element: <Restaurants />,
+          },
+        ]
+      },
+      {
+        path: 'settings',
+        element: <Settings />,
+      },
+      {
+        path: 'profile',
+        element: <Profile />,
+      },
+      // {
+      //   path: 'settings',
+      //   element: <Settings />,
+      //   children:[]
+      // }
+      // {
+      //   path: 'profile',
+      //   element: <Profile />,
+      //   children:[]
+      // }
+    ]
   }
 ])
 

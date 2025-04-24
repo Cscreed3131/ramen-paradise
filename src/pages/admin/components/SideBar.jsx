@@ -1,17 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-function SideBar({ activeItem , setActiveItem }) {
-    const handleItemClick = (item) => {
-        if(item === 'Logout')
-        {
-            // Handle logout logic here
-            console.log('Logging out...');
-        }
-        setActiveItem(item);
-    };
-
+function SideBar() {
     return (
-        <div className="h-screen p-4 bg-gray-800 flex flex-col justify-between">
+        <div className="h-screen p-4 bg-gray-900 flex flex-col justify-between">
             <div>
                 <div className="flex flex-col justify-center items-center mb-4">
                     <img
@@ -26,37 +18,27 @@ function SideBar({ activeItem , setActiveItem }) {
                     <hr className="w-full border-t-2 border-gray-700 mt-4" />
                 </div>
                 <ul className="space-y-2">
-                    <li
-                        className={`p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200 ${
-                            activeItem === 'Dashboard' ? 'bg-green-500' : ''
-                        }`}
-                        onClick={() => handleItemClick('Dashboard')}
-                    >
-                        <span className="mr-2">📊</span> Dashboard
+                    <li className="p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200">
+                        <Link to="/admin/dashboard/products" className="flex items-center w-full">
+                            <span className="mr-2">📊</span> Dashboard
+                        </Link>
                     </li>
-                    <li
-                        className={`p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200 ${
-                            activeItem === 'Settings' ? 'bg-green-500' : ''
-                        }`}
-                        onClick={() => handleItemClick('Settings')}
-                    >
-                        <span className="mr-2">⚙️</span> Settings
+                    <li className="p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200">
+                        <Link to="/admin/settings" className="flex items-center w-full">
+                            <span className="mr-2">⚙️</span> Settings
+                        </Link>
                     </li>
-                    <li
-                        className={`p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200 ${
-                            activeItem === 'Profile' ? 'bg-green-500' : ''
-                        }`}
-                        onClick={() => handleItemClick('Profile')}
-                    >
-                        <span className="mr-2">👤</span> Profile
+                    <li className="p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200">
+                        <Link to="/admin/profile" className="flex items-center w-full">
+                            <span className="mr-2">👤</span> Profile
+                        </Link>
                     </li>
                 </ul>
             </div>
-            <div
-                className="p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200"
-                onClick={() => handleItemClick('Logout')}
-            >
-                <span className="mr-2">🚪</span> Logout
+            <div className="p-2 rounded-r-full hover:bg-gray-700 flex items-center transition-all duration-200">
+                <Link to="/logout" className="flex items-center w-full">
+                    <span className="mr-2">🚪</span> Logout
+                </Link>
             </div>
         </div>
     );

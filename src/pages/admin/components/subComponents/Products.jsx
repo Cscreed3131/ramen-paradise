@@ -1,24 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Button from '../../../../components/Button';
-
-const Card = ({ icon, title }) => (
-    <div className='flex items-center justify-between p-4 bg-gray-800 rounded-lg shadow-md'>
-        <h3 className='text-xl font-semibold flex items-center gap-2'>
-            <span>{icon}</span> {title}
-        </h3>
-        <Button className='px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 hover:scale-105 transition duration-300'>
-            {'>'}
-        </Button>
-    </div>
-);
+import { useNavigate } from 'react-router-dom';
 
 function Products() {
+    const navigate= useNavigate();
+
     const cards = [
-        { icon: '📦', title: 'Product List' },
-        { icon: '➕', title: 'Add Product' },
-        { icon: '❌', title: 'Remove Product' },
-        { icon: '✏️', title: 'Edit Product' },
-        { icon: '🔍', title: 'Best Selling Items' },
+        { icon: '📦', title: 'Product List', slug: 'product-list' },
+        { icon: '➕', title: 'Add Product', slug: 'add-product' },
+        { icon: '❌', title: 'Remove Product', slug: 'remove-product' },
+        { icon: '✏️', title: 'Edit Product', slug: 'edit-product' },
+        { icon: '🔍', title: 'Best Selling Items', slug: 'best-selling-items' }
     ];
 
     return (
@@ -27,7 +19,17 @@ function Products() {
             <p className='my-2'>Manage your products here.</p>
             <div className='flex flex-col gap-3'>
                 {cards.map((card, index) => (
-                    <Card key={index} icon={card.icon} title={card.title} />
+                    <div key={index} className='flex items-center justify-between p-4 bg-gray-800 rounded-lg shadow-md'>
+                        <h3 className='text-xl font-semibold flex items-center gap-2'>
+                            <span>{card.icon}</span> {card.title}
+                        </h3>
+                        <Button 
+                            className='px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 hover:scale-105 transition duration-300' 
+                            onClick={() => navigate(card.slug)}
+                        >
+                            {'>'}
+                        </Button>
+                    </div>
                 ))}
             </div>
         </div>
