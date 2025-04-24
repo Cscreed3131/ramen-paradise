@@ -7,6 +7,7 @@ import { Provider } from 'react-redux'
 import store from './Store/store'
 import {AuthLayout} from './components/index.js'
 import AuthPage from './pages/AuthPage'
+import AdminPage from './pages/AdminPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,11 @@ const router = createBrowserRouter([
       </AuthLayout>
     )
   },
+  {
+    path: '/admin-page',
+    element: <AdminPage />,
+    children:[]
+  }
 ])
 
 createRoot(document.getElementById('root')).render(
