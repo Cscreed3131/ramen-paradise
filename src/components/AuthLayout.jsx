@@ -6,7 +6,8 @@ export default function ProtectedRoute({children, authentication = true}) {
     const navigate = useNavigate()
     const [loader, setLoader] = useState(true)
     const authStatus = useSelector(state => state.auth.status)
-
+    console.log("authStatus", authStatus)
+    
     useEffect(() => {
         if(authentication && authStatus !== authentication){
             navigate("/auth-page")

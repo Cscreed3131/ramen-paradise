@@ -10,6 +10,11 @@ import CardTitle from "./Card/CardTitle";
 import Button from "./Button";
 import Input from "./Input";
 import AuthLayout from "./AuthLayout"
+import Home from "./Home/Home";
+import Menu from "./Menu/Menu";
+import Services from "./Services/Services";
+import Location from "./Location/Location";
+
 export { 
     Header,
     Footer, 
@@ -23,4 +28,8 @@ export {
     Button,
     Input,
     AuthLayout,
+    Home,
+    Menu,
+    Services,
+    Location,
 };

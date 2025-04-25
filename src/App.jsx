@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import {Header,Footer} from './components/index'
+import {Header,Footer,Home,Menu, Services} from './components/index'
 import { useDispatch } from 'react-redux';
 import authService from './firebase/AuthService';
 import {signin,signout} from './features/authSlice'
@@ -9,27 +9,27 @@ function App() {
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    authService.getCurrentUserId().then((userData)=>{
-      if(userData){
-        dispatch(signin({userData}))
-      } else {
-        dispatch(signout())
-      }
-    }).finally(()=>{
-      setLoading(false)
-    })
-  },[])
+  // useEffect(() => {
+  //   authService.getCurrentUserId().then((userData)=>{
+  //     if(userData){
+  //       dispatch(signin({userData}))
+  //     } else {
+  //       dispatch(signout())
+  //     }
+  //   }).finally(()=>{
+  //     setLoading(false)
+  //   })
+  // },[])
 
-  return !loading ? (
-    <>
-      <div className='w-full'>
-        <Header/>
-        <Outlet />
-        <Footer/>
+  return (<>
+      <div className='w-full h-full'>
+      <Header/>
+      <Outlet />
+      <Footer/>
+
       </div>
-    </>
-  ) : null
+    </>);
+  
 }
 
 export default App

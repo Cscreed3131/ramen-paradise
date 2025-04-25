@@ -1,6 +1,6 @@
 import { db, storage } from '../firebase';
 import { collection, addDoc, getDocs, deleteDoc, updateDoc, doc, getDoc} from 'firebase/firestore';
-import { ref, uploadBytes,getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export class ProductsService {
     db;

@@ -5,9 +5,15 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { Provider } from 'react-redux'
 import store from './Store/store'
-import {AuthLayout} from './components/index.js'
 import AuthPage from './pages/AuthPage'
 import AdminPage from './pages/AdminPage'
+import {
+  AuthLayout, 
+  Home,
+  Menu,
+  Services,
+  Location,
+} from './components/index.js'
 import { 
   Dashboard,
   AddProduct,
@@ -20,12 +26,33 @@ import {
   Orders,
   Customers,
   Restaurants} from './pages/admin/components/adminComponents.jsx'
+import Offers from './components/Offers/Offers.jsx'
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
     children: [
+      {
+        path: 'home',
+        element: <Home />,
+      },
+      {
+        path: 'menu',
+        element: <Menu />,
+      },
+      {
+        path: 'services',
+        element: <Services />,
+      },
+      {
+        path: 'location',
+        element: <Location />,
+      },
+      {
+        path: 'offers',
+        element: <Offers />,
+      }
     ]
   },
   {
@@ -36,9 +63,14 @@ const router = createBrowserRouter([
       </AuthLayout>
     )
   },
+  
   {
     path: '/admin',
-    element: <AdminPage />,
+    element: (
+      <AuthLayout authentication={false}>
+        <AdminPage />
+      </AuthLayout>
+    ),
     children:[
       {
         path: 'dashboard',
