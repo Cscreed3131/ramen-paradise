@@ -12,11 +12,11 @@ export default function Button({
     <button
       className={`
         px-4 
-        rounded-lg
         ${bgColor} 
         ${textColor} 
-        ${className}`}
-      type={type}
+        ${className}
+        `}
+        type={type}
       {...props}
     >
       {children}

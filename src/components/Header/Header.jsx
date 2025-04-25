@@ -1,11 +1,14 @@
 import React from 'react'
 import { Logo, RegisterBtn } from '../index'
 import { Link, useNavigate } from 'react-router-dom';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import { signout as authSignout }  from '../../features/authSlice';
+import Button from '../Button'
+import authService from '../../firebase/AuthService';
 
 export default function Header() {
-    const authStatus = useSelector((state)=>{state.auth.status})
-    
+    const authStatus = useSelector((state)=>state.auth.status)
+    const dispatch = useDispatch()
     const navigate = useNavigate();
 
     const navItems = [
@@ -17,25 +20,29 @@ export default function Header() {
         {
             name: 'Food',
             slug: '/food',
-            active: !authStatus
+            active: true
         },
         {
             name: 'Services',
             slug: '/services',
-            active: !authStatus
+            active: true
         },
         {
             name: 'Resturant',
             slug: '/resturant',
-            active: !authStatus
+            active: true
         },
         {
             name: 'Offers',
             slug: '/offers',
-            active: !authStatus
+            active: true
         },
     ]
 
+    const signout= async() => {
+        await authService.signout()
+        dispatch(authSignout())
+    }
     return (
         <header className='shadow'>
             <div className='bg-slate-800 text-white p-6 flex justify-between items-center'>
@@ -43,7 +50,7 @@ export default function Header() {
                     <Logo />
                 </Link>
 
-                <ul className = 'flex ml-auto'>
+                <ul className = 'flex ml-auto gap-2'>
                     {navItems.map(item => 
                         item.active ? (
                             <li key={item.name}>
@@ -60,7 +67,23 @@ export default function Header() {
                         ): null
                     )
                 }
-                <li><RegisterBtn /></li>
+                {
+                    authStatus===false ? (
+                        <li key='register'>
+                            <RegisterBtn />
+                        </li>
+                    ) : (<li key='logout'>
+                        <Button children={'Logout'} 
+                        className='
+                            bg-red-500
+                            px-6 py-2 
+                            duration-200 
+                            hover:bg-red-700
+                            rounded-full'
+                            onClick = {signout}/>
+                        </li>
+                    )
+                }
                 </ul>
             </div>
         </header>

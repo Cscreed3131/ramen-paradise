@@ -1,7 +1,7 @@
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../firebase'; // Import the initialized auth instance
+import { auth } from '../firebase'; 
 
-export class AuthService {
+class AuthService {
     constructor(){
         this.auth = auth;
     }
