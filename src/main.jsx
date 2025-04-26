@@ -29,10 +29,15 @@ import {
 import Offers from './components/Offers/Offers.jsx'
 
 const router = createBrowserRouter([
+  // Main public routes
   {
     path: '/',
     element: <App />,
     children: [
+      {
+        index: true, // Default route
+        element: <Home />,
+      },
       {
         path: 'home',
         element: <Home />,
@@ -55,6 +60,8 @@ const router = createBrowserRouter([
       }
     ]
   },
+  
+  // Authentication route
   {
     path: '/auth-page',
     element: (
@@ -64,75 +71,95 @@ const router = createBrowserRouter([
     )
   },
   
+  // Admin section routes
   {
     path: '/admin',
     element: (
-      <AuthLayout authentication={false}>
+      // <AuthLayout authentication={true}>
         <AdminPage />
-      </AuthLayout>
+      // </AuthLayout>
     ),
-    children:[
+    children: [
+      {
+        index: true, // Default admin route
+        element: <Dashboard />
+      },
       {
         path: 'dashboard',
-        element: <Dashboard />,
-        children:[
-          {
-            path: 'products',
-            element: <Products />,
-          },
-          {
-            path: 'products/product-list',
-            element: <ProductList />,
-          }, 
-          {
-            path: 'products/add-product',
-            element: <AddProduct />,
-          }, 
-          {
-            path: 'products/remove-product',
-            element: <RemoveProduct />
-          },
-          {
-            path: 'products/edit-product',
-            element: <EditProduct />
-          },
-          {
-            path: 'products/Best-seller',
-            element: <ProductList />
-          },
-          {
-            path: 'orders',
-            element: <Orders />,
-          },
-          {
-            path: 'customers',
-            element: <Customers />,
-          },
-          {
-            path: 'restaurants',
-            element: <Restaurants />,
-          },
+        element: <Dashboard />
+      },
+      
+      // Products management routes
+      {
+        path: 'products',
+        element: <Products />,
+        children: [
+          
         ]
       },
       {
+        index: true,
+        element: <ProductList />
+      },
+      {
+        path: 'products/product-list',
+        element: <ProductList />
+      },
+      {
+        path: 'products/add-product',
+        element: <AddProduct />
+      },
+      {
+        path: 'products/remove-product',
+        element: <RemoveProduct />
+      },
+      {
+        path: 'products/edit-product',
+        element: <EditProduct />
+      },
+      {
+        path: 'products/best-sellers',
+        element: <ProductList />
+      },
+      
+      // Other main admin routes
+      {
+        path: 'orders',
+        element: <Orders />
+      },
+      {
+        path: 'customers',
+        element: <Customers />
+      },
+      {
+        path: 'restaurants',
+        element: <Restaurants />
+      },
+      
+      // Account-related routes
+      {
         path: 'settings',
-        element: <Settings />,
+        element: <Settings />
       },
       {
         path: 'profile',
-        element: <Profile />,
-      },
-      // {
-      //   path: 'settings',
-      //   element: <Settings />,
-      //   children:[]
-      // }
-      // {
-      //   path: 'profile',
-      //   element: <Profile />,
-      //   children:[]
-      // }
+        element: <Profile />
+      }
     ]
+  },
+  
+  // 404 route - catch all unmatched routes
+  {
+    path: '*',
+    element: <div className="flex h-screen items-center justify-center bg-gray-900">
+      <div className="text-center">
+        <h2 className="text-4xl font-bold text-white mb-4">Page Not Found</h2>
+        <p className="text-gray-400 mb-6">The page you're looking for doesn't exist or has been moved.</p>
+        <a href="/" className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-red-500 text-white font-medium rounded-lg">
+          Return to Homepage
+        </a>
+      </div>
+    </div>
   }
 ])
 
