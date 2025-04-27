@@ -1,150 +1,152 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import productsService from '../../../../firebase/ProductsService';
 
+
+// const [products, setProducts] = useState([
+//   {
+//     id: 1,
+//     name: "Tonkotsu Ramen",
+//     image: "https://images.unsplash.com/photo-1614563637806-1d0e645e0940?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 14.99,
+//     category: "ramen",
+//     description: "Rich pork bone broth with chashu, soft-boiled egg, green onions, and nori.",
+//     inStock: true,
+//     featured: true,
+//     rating: 4.8,
+//     sales: 342,
+//     dateAdded: "2024-10-15T09:30:00",
+//     ingredients: ["Pork bone broth", "Ramen noodles", "Chashu pork", "Soft-boiled egg", "Green onions", "Nori"]
+//   },
+//   {
+//     id: 2,
+//     name: "Spicy Miso Ramen",
+//     image: "https://images.unsplash.com/photo-1591814468924-caf88d1232e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 15.99,
+//     category: "ramen",
+//     description: "Spicy miso broth with ground pork, corn, bean sprouts, and butter.",
+//     inStock: true,
+//     featured: true,
+//     rating: 4.7,
+//     sales: 287,
+//     dateAdded: "2024-10-16T10:45:00",
+//     ingredients: ["Miso broth", "Ramen noodles", "Ground pork", "Corn", "Bean sprouts", "Butter", "Chili oil"]
+//   },
+//   {
+//     id: 3,
+//     name: "Shoyu Ramen",
+//     image: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 13.99,
+//     category: "ramen",
+//     description: "Soy sauce-based broth with chicken, bamboo shoots, and marinated egg.",
+//     inStock: true,
+//     featured: false,
+//     rating: 4.5,
+//     sales: 204,
+//     dateAdded: "2024-10-18T14:20:00",
+//     ingredients: ["Soy sauce broth", "Ramen noodles", "Chicken", "Bamboo shoots", "Marinated egg", "Green onions"]
+//   },
+//   {
+//     id: 4,
+//     name: "Dragon Roll",
+//     image: "https://images.unsplash.com/photo-1617196034288-de201c5939cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 16.99,
+//     category: "sushi",
+//     description: "Shrimp tempura roll topped with avocado, eel, and special sauce.",
+//     inStock: true,
+//     featured: true,
+//     rating: 4.6,
+//     sales: 253,
+//     dateAdded: "2024-10-20T11:15:00",
+//     ingredients: ["Sushi rice", "Nori", "Shrimp tempura", "Avocado", "Eel", "Special sauce"]
+//   },
+//   {
+//     id: 5,
+//     name: "California Roll",
+//     image: "https://images.unsplash.com/photo-1559410545-0bdcd187e323?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 12.99,
+//     category: "sushi",
+//     description: "Crab, avocado, and cucumber roll with tobiko on the outside.",
+//     inStock: true,
+//     featured: false,
+//     rating: 4.3,
+//     sales: 186,
+//     dateAdded: "2024-10-21T16:30:00",
+//     ingredients: ["Sushi rice", "Nori", "Imitation crab", "Avocado", "Cucumber", "Tobiko"]
+//   },
+//   {
+//     id: 6,
+//     name: "Gyoza",
+//     image: "https://images.unsplash.com/photo-1626845357008-01fe606c2cf6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 8.99,
+//     category: "appetizers",
+//     description: "Pan-fried dumplings filled with pork and vegetables.",
+//     inStock: true,
+//     featured: true,
+//     rating: 4.5,
+//     sales: 241,
+//     dateAdded: "2024-10-22T12:10:00",
+//     ingredients: ["Dumpling wrappers", "Ground pork", "Cabbage", "Green onions", "Garlic", "Ginger"]
+//   },
+//   {
+//     id: 7,
+//     name: "Tempura",
+//     image: "https://images.unsplash.com/photo-1579688690278-d36e36fb3f0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 12.99,
+//     category: "appetizers",
+//     description: "Lightly battered and fried shrimp and vegetables.",
+//     inStock: true,
+//     featured: false,
+//     rating: 4.4,
+//     sales: 178,
+//     dateAdded: "2024-10-23T15:40:00",
+//     ingredients: ["Shrimp", "Assorted vegetables", "Tempura batter", "Tempura dipping sauce"]
+//   },
+//   {
+//     id: 8,
+//     name: "Matcha Green Tea",
+//     image: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 4.99,
+//     category: "drinks",
+//     description: "Traditional Japanese powdered green tea.",
+//     inStock: true,
+//     featured: true,
+//     rating: 4.4,
+//     sales: 224,
+//     dateAdded: "2024-10-24T09:20:00",
+//     ingredients: ["Matcha green tea powder", "Hot water"]
+//   },
+//   {
+//     id: 9,
+//     name: "Mochi Ice Cream",
+//     image: "https://images.unsplash.com/photo-1628293356502-861c936da2d1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 6.99,
+//     category: "desserts",
+//     description: "Sweet rice cake filled with ice cream in various flavors.",
+//     inStock: false,
+//     featured: false,
+//     rating: 4.7,
+//     sales: 198,
+//     dateAdded: "2024-10-25T13:50:00",
+//     ingredients: ["Glutinous rice flour", "Sugar", "Ice cream", "Cornstarch"]
+//   },
+//   {
+//     id: 10,
+//     name: "Sake",
+//     image: "https://images.unsplash.com/photo-1531131141766-e1dc10e8facc?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+//     price: 10.50,
+//     category: "drinks",
+//     description: "Traditional Japanese rice wine served warm or cold.",
+//     inStock: true,
+//     featured: false,
+//     rating: 4.2,
+//     sales: 156,
+//     dateAdded: "2024-10-26T17:15:00",
+//     ingredients: ["Rice", "Water", "Koji"]
+//   }
+// ]);
 function ProductList() {
-  // Sample product data - in a real app, fetch this from your backend
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Tonkotsu Ramen",
-      image: "https://images.unsplash.com/photo-1614563637806-1d0e645e0940?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 14.99,
-      category: "ramen",
-      description: "Rich pork bone broth with chashu, soft-boiled egg, green onions, and nori.",
-      inStock: true,
-      featured: true,
-      rating: 4.8,
-      sales: 342,
-      dateAdded: "2024-10-15T09:30:00",
-      ingredients: ["Pork bone broth", "Ramen noodles", "Chashu pork", "Soft-boiled egg", "Green onions", "Nori"]
-    },
-    {
-      id: 2,
-      name: "Spicy Miso Ramen",
-      image: "https://images.unsplash.com/photo-1591814468924-caf88d1232e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 15.99,
-      category: "ramen",
-      description: "Spicy miso broth with ground pork, corn, bean sprouts, and butter.",
-      inStock: true,
-      featured: true,
-      rating: 4.7,
-      sales: 287,
-      dateAdded: "2024-10-16T10:45:00",
-      ingredients: ["Miso broth", "Ramen noodles", "Ground pork", "Corn", "Bean sprouts", "Butter", "Chili oil"]
-    },
-    {
-      id: 3,
-      name: "Shoyu Ramen",
-      image: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 13.99,
-      category: "ramen",
-      description: "Soy sauce-based broth with chicken, bamboo shoots, and marinated egg.",
-      inStock: true,
-      featured: false,
-      rating: 4.5,
-      sales: 204,
-      dateAdded: "2024-10-18T14:20:00",
-      ingredients: ["Soy sauce broth", "Ramen noodles", "Chicken", "Bamboo shoots", "Marinated egg", "Green onions"]
-    },
-    {
-      id: 4,
-      name: "Dragon Roll",
-      image: "https://images.unsplash.com/photo-1617196034288-de201c5939cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 16.99,
-      category: "sushi",
-      description: "Shrimp tempura roll topped with avocado, eel, and special sauce.",
-      inStock: true,
-      featured: true,
-      rating: 4.6,
-      sales: 253,
-      dateAdded: "2024-10-20T11:15:00",
-      ingredients: ["Sushi rice", "Nori", "Shrimp tempura", "Avocado", "Eel", "Special sauce"]
-    },
-    {
-      id: 5,
-      name: "California Roll",
-      image: "https://images.unsplash.com/photo-1559410545-0bdcd187e323?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 12.99,
-      category: "sushi",
-      description: "Crab, avocado, and cucumber roll with tobiko on the outside.",
-      inStock: true,
-      featured: false,
-      rating: 4.3,
-      sales: 186,
-      dateAdded: "2024-10-21T16:30:00",
-      ingredients: ["Sushi rice", "Nori", "Imitation crab", "Avocado", "Cucumber", "Tobiko"]
-    },
-    {
-      id: 6,
-      name: "Gyoza",
-      image: "https://images.unsplash.com/photo-1626845357008-01fe606c2cf6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 8.99,
-      category: "appetizers",
-      description: "Pan-fried dumplings filled with pork and vegetables.",
-      inStock: true,
-      featured: true,
-      rating: 4.5,
-      sales: 241,
-      dateAdded: "2024-10-22T12:10:00",
-      ingredients: ["Dumpling wrappers", "Ground pork", "Cabbage", "Green onions", "Garlic", "Ginger"]
-    },
-    {
-      id: 7,
-      name: "Tempura",
-      image: "https://images.unsplash.com/photo-1579688690278-d36e36fb3f0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 12.99,
-      category: "appetizers",
-      description: "Lightly battered and fried shrimp and vegetables.",
-      inStock: true,
-      featured: false,
-      rating: 4.4,
-      sales: 178,
-      dateAdded: "2024-10-23T15:40:00",
-      ingredients: ["Shrimp", "Assorted vegetables", "Tempura batter", "Tempura dipping sauce"]
-    },
-    {
-      id: 8,
-      name: "Matcha Green Tea",
-      image: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 4.99,
-      category: "drinks",
-      description: "Traditional Japanese powdered green tea.",
-      inStock: true,
-      featured: true,
-      rating: 4.4,
-      sales: 224,
-      dateAdded: "2024-10-24T09:20:00",
-      ingredients: ["Matcha green tea powder", "Hot water"]
-    },
-    {
-      id: 9,
-      name: "Mochi Ice Cream",
-      image: "https://images.unsplash.com/photo-1628293356502-861c936da2d1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 6.99,
-      category: "desserts",
-      description: "Sweet rice cake filled with ice cream in various flavors.",
-      inStock: false,
-      featured: false,
-      rating: 4.7,
-      sales: 198,
-      dateAdded: "2024-10-25T13:50:00",
-      ingredients: ["Glutinous rice flour", "Sugar", "Ice cream", "Cornstarch"]
-    },
-    {
-      id: 10,
-      name: "Sake",
-      image: "https://images.unsplash.com/photo-1531131141766-e1dc10e8facc?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      price: 10.50,
-      category: "drinks",
-      description: "Traditional Japanese rice wine served warm or cold.",
-      inStock: true,
-      featured: false,
-      rating: 4.2,
-      sales: 156,
-      dateAdded: "2024-10-26T17:15:00",
-      ingredients: ["Rice", "Water", "Koji"]
-    }
-  ]);
-
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
@@ -152,14 +154,27 @@ function ProductList() {
   const [sortOrder, setSortOrder] = useState('asc');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Simulate loading effect
+  // Fetch products from backend
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        // Get products from Firebase via ProductsService
+        const data = await productsService.getAllProducts();
+        setProducts(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   // Filter and sort products
@@ -213,34 +228,97 @@ function ProductList() {
   };
 
   // Toggle product featured status
-  const toggleFeatured = (productId) => {
-    setProducts(products.map(product => 
-      product.id === productId ? { ...product, featured: !product.featured } : product
-    ));
+  const toggleFeatured = async (productId) => {
+    try {
+      // Find the product
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
 
-    if (selectedProduct && selectedProduct.id === productId) {
-      setSelectedProduct({ ...selectedProduct, featured: !selectedProduct.featured });
+      // Optimistic UI update
+      setProducts(products.map(product => 
+        product.id === productId ? { ...product, featured: !product.featured } : product
+      ));
+
+      if (selectedProduct && selectedProduct.id === productId) {
+        setSelectedProduct({ ...selectedProduct, featured: !selectedProduct.featured });
+      }
+
+      // Update in backend
+      await productsService.updateProduct(productId, { featured: !product.featured });
+    } catch (err) {
+      console.error('Error toggling featured status:', err);
+      // Revert the UI changes in case of error
+      const originalProducts = await productsService.getAllProducts();
+      setProducts(originalProducts);
+      if (selectedProduct) {
+        const updatedSelected = originalProducts.find(p => p.id === selectedProduct.id);
+        if (updatedSelected) {
+          setSelectedProduct(updatedSelected);
+        }
+      }
     }
   };
 
   // Toggle product stock status
-  const toggleStock = (productId) => {
-    setProducts(products.map(product => 
-      product.id === productId ? { ...product, inStock: !product.inStock } : product
-    ));
+  const toggleStock = async (productId) => {
+    try {
+      // Find the product
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
 
-    if (selectedProduct && selectedProduct.id === productId) {
-      setSelectedProduct({ ...selectedProduct, inStock: !selectedProduct.inStock });
+      // Optimistic UI update
+      setProducts(products.map(product => 
+        product.id === productId ? { ...product, inStock: !product.inStock } : product
+      ));
+
+      if (selectedProduct && selectedProduct.id === productId) {
+        setSelectedProduct({ ...selectedProduct, inStock: !selectedProduct.inStock });
+      }
+
+      // Update in backend
+      await productsService.updateProduct(productId, { inStock: !product.inStock });
+    } catch (err) {
+      console.error('Error toggling stock status:', err);
+      // Revert the UI changes in case of error
+      const originalProducts = await productsService.getAllProducts();
+      setProducts(originalProducts);
+      if (selectedProduct) {
+        const updatedSelected = originalProducts.find(p => p.id === selectedProduct.id);
+        if (updatedSelected) {
+          setSelectedProduct(updatedSelected);
+        }
+      }
     }
   };
 
-  // Delete product (just from the UI in this demo)
-  const deleteProduct = (productId) => {
-    setProducts(products.filter(product => product.id !== productId));
-    
-    if (selectedProduct && selectedProduct.id === productId) {
-      setSelectedProduct(null);
+  // Delete product
+  const deleteProduct = async (productId) => {
+    try {
+      // Optimistic UI update
+      setProducts(products.filter(product => product.id !== productId));
+      
+      if (selectedProduct && selectedProduct.id === productId) {
+        setSelectedProduct(null);
+      }
+
+      // Delete from backend
+      await productsService.deleteProduct(productId);
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      // Revert the UI changes in case of error
+      const originalProducts = await productsService.getAllProducts();
+      setProducts(originalProducts);
     }
+  };
+
+  // Navigate to edit product page
+  const navigateToEdit = (productId) => {
+    navigate(`/admin/products/edit/${productId}`);
+  };
+
+  // Navigate to add product page
+  const navigateToAddProduct = () => {
+    navigate('/admin/products/add-product');
   };
 
   // Calculate product statistics
@@ -286,6 +364,16 @@ function ProductList() {
           </div>
         </div>
       </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Product Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -431,7 +519,10 @@ function ProductList() {
             <div className="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">Product List</h3>
               <div className="flex items-center">
-                <button className="px-4 py-1.5 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition duration-300 text-sm flex items-center">
+                <button 
+                  onClick={navigateToAddProduct}
+                  className="px-4 py-1.5 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition duration-300 text-sm flex items-center"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
@@ -492,7 +583,7 @@ function ProductList() {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
-                                <span className="ml-1 text-sm text-gray-300">{product.rating.toFixed(1)}</span>
+                                <span className="ml-1 text-sm text-gray-300">{product.rating?.toFixed(1) || "0.0"}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -615,10 +706,10 @@ function ProductList() {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      <span className="ml-1 text-white">{selectedProduct.rating.toFixed(1)}</span>
+                      <span className="ml-1 text-white">{selectedProduct.rating?.toFixed(1) || "0.0"}</span>
                     </div>
                     <div className="text-gray-400 text-sm">
-                      {selectedProduct.sales} sold
+                      {selectedProduct.sales || 0} sold
                     </div>
                     <div className="text-gray-400 text-sm">
                       Added: {formatDate(selectedProduct.dateAdded)}
@@ -630,16 +721,18 @@ function ProductList() {
                     <p className="text-gray-300 text-sm">{selectedProduct.description}</p>
                   </div>
                   
-                  <div className="py-3 border-b border-gray-700">
-                    <h5 className="text-sm font-medium text-gray-400 mb-2">INGREDIENTS</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProduct.ingredients.map((ingredient, index) => (
-                        <span key={index} className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded-full">
-                          {ingredient}
-                        </span>
-                      ))}
+                  {selectedProduct.ingredients && selectedProduct.ingredients.length > 0 && (
+                    <div className="py-3 border-b border-gray-700">
+                      <h5 className="text-sm font-medium text-gray-400 mb-2">INGREDIENTS</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.ingredients.map((ingredient, index) => (
+                          <span key={index} className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded-full">
+                            {ingredient}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
                   <div className="flex space-x-3 mt-6">
                     <button 
@@ -668,7 +761,10 @@ function ProductList() {
                   </div>
                   
                   <div className="flex space-x-3 mt-3">
-                    <button className="flex-1 px-4 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-medium rounded-lg transition duration-300 flex items-center justify-center">
+                    <button 
+                      onClick={() => navigateToEdit(selectedProduct.id)}
+                      className="flex-1 px-4 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-medium rounded-lg transition duration-300 flex items-center justify-center"
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
