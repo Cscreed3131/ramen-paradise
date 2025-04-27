@@ -1,35 +1,21 @@
-import { useEffect, useState } from 'react'
-import {Header,Footer,Home,Menu, Services} from './components/index'
-import { useDispatch } from 'react-redux';
-import authService from './firebase/AuthService';
-import {signin,signout} from './features/authSlice'
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import Header from './components/Header/Header';
+import Footer from './components/Footer/Footer';
 
 function App() {
-  const [loading, setLoading] = useState(true);
-  const dispatch = useDispatch();
-
-  // useEffect(() => {
-  //   authService.getCurrentUserId().then((userData)=>{
-  //     if(userData){
-  //       dispatch(signin({userData}))
-  //     } else {
-  //       dispatch(signout())
-  //     }
-  //   }).finally(()=>{
-  //     setLoading(false)
-  //   })
-  // },[])
-
-  return (<>
-      <div className='w-full h-full'>
-      <Header/>
-      <Outlet />
-      <Footer/>
-
-      </div>
-    </>);
+  const auth = useSelector(state => state.auth);
   
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
 }
 
-export default App
+export default App;

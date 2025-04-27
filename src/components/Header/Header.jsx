@@ -68,7 +68,7 @@ export default function Header() {
     // Handle login
     const handleLogin = () => {
         // Replace with your actual login logic
-        navigate('/login');
+        navigate('/auth-page');
         setIsProfileOpen(false);
     };
 

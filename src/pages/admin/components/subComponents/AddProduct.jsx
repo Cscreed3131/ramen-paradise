@@ -1,62 +1,143 @@
-import React, { useState } from 'react';
-import { useDispatch } from "react-redux";
+import React, { useState, useRef } from 'react';
 import { useForm } from "react-hook-form";
+import { Client, Storage, ID } from 'appwrite';
 import productsService from '../../../../firebase/ProductsService';
 
 function AddProduct() {
-  const dispatch = useDispatch();
+  const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadedFileId, setUploadedFileId] = useState(null);
+  
+  const fileInputRef = useRef(null);
+  
+  // Initialize Appwrite client directly (as a backup if productsService fails)
+  const client = new Client();
+  client
+    .setEndpoint('https://fra.cloud.appwrite.io/v1')
+    .setProject('680cdd90000983513641');
+  
+  const storage = new Storage(client);
   
   const { 
     register, 
     handleSubmit, 
+    watch,
     reset,
     formState: { errors } 
   } = useForm();
 
+  // Watch form values for preview
+  const formValues = watch();
+
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setImage(selectedFile);
+      
+      const previewUrl = URL.createObjectURL(selectedFile);
+      setImagePreview(previewUrl);
+      setUploadError(null); // Clear any previous errors
+    }
+  };
+
+  const resetImage = () => {
+    setImage(null);
+    setImagePreview(null);
+    setUploadedFileId(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+  };
+
+  // Standalone upload function (as backup)
+  const uploadImageDirect = async () => {
+    if (!image) return null;
+
+    try {
+      const result = await storage.createFile(
+        '680cdea9001879fd10c6', 
+        ID.unique(),
+        image
+      );
+      
+      const fileId = result.$id;
+      setUploadedFileId(fileId);
+      
+      return {
+        fileId,
+        fileUrl: storage.getFileView('680cdea9001879fd10c6', fileId)
       };
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
+    } catch (error) {
+      console.error('Error uploading image directly:', error);
+      setUploadError('Failed to upload image. Please try again.');
+      throw error;
     }
   };
 
   const addProduct = async (data) => {
-    setIsSubmitting(true);
-    
-    const newProduct = {
-      name: data.productName,
-      price: data.productPrice,
-      description: data.productDescription,
-      image: imagePreview,
-      category: data.category,
-      featured: data.featured === 'true',
-      inStock: true,
-      dateAdded: new Date().toISOString()
-    };
+    if (!image) {
+      setUploadError('Please select an image for the product');
+      return;
+    }
 
+    setIsSubmitting(true);
+    setUploadError(null);
+    
     try {
-      const productId = await productsService.addProduct(newProduct);
+      // Create new product object
+      const newProduct = {
+        name: data.productName,
+        price: data.productPrice,
+        description: data.productDescription,
+        image: image,
+        category: data.category,
+        featured: data.featured === 'true',
+        inStock: true,
+        dateAdded: new Date().toISOString()
+      };
+
+      let productId;
+      
+      try {
+        // First try using the productsService
+        productId = await productsService.addProduct(newProduct);
+      } catch (primaryError) {
+        console.warn('Primary product service failed, trying direct upload:', primaryError);
+        
+        // If the primary method fails, try the direct upload method
+        const imageResult = await uploadImageDirect();
+        
+        if (imageResult) {
+          // Update the product with the image URL from direct upload
+          const updatedProduct = {
+            ...newProduct,
+            image: imageResult.fileUrl,
+            imageId: imageResult.fileId
+          };
+          
+          // Try adding the product again with the direct image URL
+          productId = await productsService.addProduct(updatedProduct);
+        } else {
+          throw new Error('Failed to upload image');
+        }
+      }
+      
       console.log('Product added successfully with ID:', productId);
       setSubmitSuccess(true);
       
       // Reset form after successful submission
       setTimeout(() => {
         reset();
-        setImagePreview(null);
+        resetImage();
         setSubmitSuccess(false);
       }, 3000);
       
     } catch (error) {
       console.error('Failed to add product:', error);
+      setUploadError(error.message || 'Failed to add product');
     } finally {
       setIsSubmitting(false);
     }
@@ -88,6 +169,16 @@ function AddProduct() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <span>Product added successfully!</span>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {uploadError && (
+        <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{uploadError}</span>
         </div>
       )}
 
@@ -193,7 +284,7 @@ function AddProduct() {
               
               <div>
                 <label className="block text-gray-400 mb-2 font-medium">Product Image</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-lg">
+                <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${!image && uploadError ? 'border-red-500' : 'border-gray-600'} border-dashed rounded-lg`}>
                   <div className="space-y-1 text-center">
                     <svg
                       className="mx-auto h-12 w-12 text-gray-400"
@@ -222,6 +313,7 @@ function AddProduct() {
                           className="sr-only"
                           accept="image/*"
                           onChange={handleImageChange}
+                          ref={fileInputRef}
                           required
                         />
                       </label>
@@ -230,6 +322,28 @@ function AddProduct() {
                     <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                   </div>
                 </div>
+                
+                {/* Image preview */}
+                {imagePreview && (
+                  <div className="mt-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-16 w-16 rounded overflow-hidden bg-gray-700">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={resetImage}
+                        className="text-red-400 hover:text-red-300 text-sm font-medium"
+                      >
+                        Remove image
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="pt-4">
@@ -273,6 +387,15 @@ function AddProduct() {
                   alt="Product Preview"
                   className="w-full h-full object-cover"
                 />
+                <button
+                  type="button"
+                  onClick={resetImage}
+                  className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 bg-gray-700/30 rounded-xl border border-gray-700 border-dashed">
@@ -297,11 +420,15 @@ function AddProduct() {
                   </div>
                   <div className="p-4">
                     <div className="flex justify-between items-center">
-                      <h5 className="text-white font-medium">Preview Name</h5>
-                      <span className="text-yellow-500 font-bold">$0.00</span>
+                      <h5 className="text-white font-medium">
+                        {formValues?.productName || "Preview Name"}
+                      </h5>
+                      <span className="text-yellow-500 font-bold">
+                        ${formValues?.productPrice || "0.00"}
+                      </span>
                     </div>
                     <p className="text-gray-400 text-sm mt-2 truncate">
-                      Product description preview...
+                      {formValues?.productDescription || "Product description preview..."}
                     </p>
                     <div className="mt-4">
                       <button className="w-full px-3 py-2 bg-gradient-to-r from-yellow-500 to-red-500 text-white text-sm font-medium rounded transition duration-300">
@@ -309,6 +436,18 @@ function AddProduct() {
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Upload status */}
+            {uploadedFileId && (
+              <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500 text-blue-400 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>File ID: {uploadedFileId}</span>
                 </div>
               </div>
             )}

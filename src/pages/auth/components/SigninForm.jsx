@@ -16,6 +16,7 @@ export default function SigninForm({ onToggle }) {
   const signin = async (data) => {
     setError("");
     setIsLoading(true);
+
     try {
       const session = await authService.signin(data);
       if (session) {
