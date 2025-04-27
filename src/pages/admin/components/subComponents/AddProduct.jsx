@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { useForm } from "react-hook-form";
-import { Client, Storage, ID } from 'appwrite';
 import productsService from '../../../../firebase/ProductsService';
 
 function AddProduct() {
@@ -12,14 +11,6 @@ function AddProduct() {
   const [uploadedFileId, setUploadedFileId] = useState(null);
   
   const fileInputRef = useRef(null);
-  
-  // Initialize Appwrite client directly (as a backup if productsService fails)
-  const client = new Client();
-  client
-    .setEndpoint('https://fra.cloud.appwrite.io/v1')
-    .setProject('680cdd90000983513641');
-  
-  const storage = new Storage(client);
   
   const { 
     register, 
@@ -52,31 +43,6 @@ function AddProduct() {
     }
   };
 
-  // Standalone upload function (as backup)
-  const uploadImageDirect = async () => {
-    if (!image) return null;
-
-    try {
-      const result = await storage.createFile(
-        '680cdea9001879fd10c6', 
-        ID.unique(),
-        image
-      );
-      
-      const fileId = result.$id;
-      setUploadedFileId(fileId);
-      
-      return {
-        fileId,
-        fileUrl: storage.getFileView('680cdea9001879fd10c6', fileId)
-      };
-    } catch (error) {
-      console.error('Error uploading image directly:', error);
-      setUploadError('Failed to upload image. Please try again.');
-      throw error;
-    }
-  };
-
   const addProduct = async (data) => {
     if (!image) {
       setUploadError('Please select an image for the product');
@@ -92,40 +58,22 @@ function AddProduct() {
         name: data.productName,
         price: data.productPrice,
         description: data.productDescription,
-        image: image,
+        image: image, // Pass the actual file object to the service
         category: data.category,
         featured: data.featured === 'true',
         inStock: true,
         dateAdded: new Date().toISOString()
       };
 
-      let productId;
+      // Use productsService to handle all the image upload and product creation
+      const result = await productsService.addProduct(newProduct);
       
-      try {
-        // First try using the productsService
-        productId = await productsService.addProduct(newProduct);
-      } catch (primaryError) {
-        console.warn('Primary product service failed, trying direct upload:', primaryError);
-        
-        // If the primary method fails, try the direct upload method
-        const imageResult = await uploadImageDirect();
-        
-        if (imageResult) {
-          // Update the product with the image URL from direct upload
-          const updatedProduct = {
-            ...newProduct,
-            image: imageResult.fileUrl,
-            imageId: imageResult.fileId
-          };
-          
-          // Try adding the product again with the direct image URL
-          productId = await productsService.addProduct(updatedProduct);
-        } else {
-          throw new Error('Failed to upload image');
-        }
+      // If successful, set the uploaded file ID for display
+      if (result && result.imageId) {
+        setUploadedFileId(result.imageId);
       }
       
-      console.log('Product added successfully with ID:', productId);
+      console.log('Product added successfully with ID:', result.productId);
       setSubmitSuccess(true);
       
       // Reset form after successful submission
@@ -445,7 +393,7 @@ function AddProduct() {
               <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500 text-blue-400 rounded-lg">
                 <div className="flex items-center">
                   <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>File ID: {uploadedFileId}</span>
                 </div>

@@ -26,27 +26,57 @@ export class ProductsService {
 
         async uploadFile(file) {
                 try {
-                        return await this.bucket.createFile(
+                        if (!file || !(file instanceof File || file instanceof Blob)) {
+                                throw new Error("Invalid file provided");
+                        }
+
+                        const uploadedFile = await this.bucket.createFile(
                                 appwirteConf.appwriteBucketId,
                                 ID.unique(),
                                 file
                         );
+
+                        if (!uploadedFile || !uploadedFile.$id) {
+                                throw new Error("File upload failed");
+                        }
+
+                        // Return both the file object and the URL for viewing it
+                        return {
+                                fileId: uploadedFile.$id,
+                                fileUrl: this.bucket.getFileView(
+                                        appwirteConf.appwriteBucketId, 
+                                        uploadedFile.$id
+                                )
+                        };
                 } catch (error) {
-                        console.log("Appwrite service :: uploadFile :: error", error);
-                        return false;
+                        console.error("Appwrite service :: uploadFile :: error", error);
+                        throw error;
                 }
         }
 
         async addProduct(productData) {
                 try {
-                        let imageUrl = null;
+                        let imageData = null;
 
+                        // Handle image upload if image is a File or Blob
                         if (productData.image instanceof File || productData.image instanceof Blob) {
-                                imageUrl = await this.uploadFile(productData.image);
+                                const uploadResult = await this.uploadFile(productData.image);
+                                imageData = {
+                                        fileUrl: uploadResult.fileUrl,
+                                        fileId: uploadResult.fileId
+                                };
                         } else if (typeof productData.image === 'string') {
-                                imageUrl = productData.image;
+                                imageData = {
+                                        fileUrl: productData.image,
+                                        fileId: this.extractFileIdFromUrl(productData.image)
+                                };
                         }
 
+                        if (!imageData) {
+                                throw new Error("Image upload failed or no image provided");
+                        }
+
+                        // Create the product object with image URL
                         const productToAdd = {
                                 name: productData.name,
                                 price: Number(productData.price),
@@ -54,11 +84,11 @@ export class ProductsService {
                                 category: productData.category || 'other',
                                 inStock: productData.inStock !== undefined ? productData.inStock : true,
                                 featured: productData.featured !== undefined ? productData.featured : false,
-                                image: imageUrl,
-                                imageMeta: imageUrl ? { 
+                                image: imageData.fileUrl,
+                                imageMeta: { 
                                         bucketId: appwirteConf.appwriteBucketId,
-                                        fileId: this.extractFileIdFromUrl(imageUrl)
-                                } : null,
+                                        fileId: imageData.fileId
+                                },
                                 ingredients: productData.ingredients || [],
                                 dateAdded: productData.dateAdded || new Date().toISOString(),
                                 rating: productData.rating !== undefined ? Number(productData.rating) : 0,
@@ -67,7 +97,10 @@ export class ProductsService {
 
                         const docRef = await addDoc(collection(this.db, 'products'), productToAdd);
                         console.log('Product added with ID:', docRef.id);
-                        return docRef.id;
+                        return {
+                                productId: docRef.id,
+                                imageId: imageData.fileId
+                        };
                 } catch (error) {
                         console.error('Error adding product:', error);
                         throw error; 
