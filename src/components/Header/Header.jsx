@@ -73,7 +73,7 @@ export default function Header() {
     };
 
     const handleProfileClick = () => {
-        navigate('/profile');
+        navigate('/user-profile');
         setIsProfileOpen(false);
     };
 

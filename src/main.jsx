@@ -29,6 +29,7 @@
   import SignupPage from './pages/SignupPage.jsx'
   import SigninPage from './pages/SigninPage.jsx'
   import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
+  import UserProfilePage from './pages/UserProfilePage.jsx'
 
   const router = createBrowserRouter([
     // Main public routes
@@ -60,7 +61,12 @@
           path: 'offers',
           element: <Offers />,
         },
+        
       ]
+    },
+    {
+      path: 'user-profile',
+      element: <UserProfilePage />,
     },
     {
       path: '/auth',
