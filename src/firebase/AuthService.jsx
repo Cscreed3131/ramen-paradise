@@ -1,6 +1,6 @@
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '../firebase'; 
-
+import userService from './UserService';
 class AuthService {
     constructor(){
         this.auth = auth;

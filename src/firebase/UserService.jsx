@@ -1,5 +1,5 @@
-import { db } from './firebase';
-
+import { db } from '../firebase';
+import authService from './AuthService';
 export class UserService{
     db;
 
@@ -9,7 +9,7 @@ export class UserService{
 
     async createUserData({name, email, password}) {
         try {
-            const userId = await this.getCurrentUserId();
+            const userId = await authService.getCurrentUserId();
             const docRef = doc(this.db, 'users', userId);
             await setDoc(docRef, { name, email, password });
             console.log('User data created successfully!');
@@ -36,5 +36,5 @@ export class UserService{
     }
 }
 
-const userService = UserService()
+const userService = new UserService()
 export default userService

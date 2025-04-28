@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,6 +9,7 @@ export default function Header() {
     const navigate = useNavigate();
     const profileDropdownRef = useRef(null);
     const cartDropdownRef = useRef(null);
+    const status = useSelector((state) => state.auth.status);
     
     // Mock user state - replace with your actual auth implementation
     const [user, setUser] = useState(null);
@@ -48,7 +50,6 @@ export default function Header() {
         },
     ]
     
-    // Close dropdowns when clicking outside
     useEffect(() => {
         function handleClickOutside(event) {
             if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
@@ -65,28 +66,17 @@ export default function Header() {
         };
     }, [profileDropdownRef, cartDropdownRef]);
 
-    // Handle login
-    const handleLogin = () => {
-        // Replace with your actual login logic
-        navigate('/auth-page');
-        setIsProfileOpen(false);
-    };
-
-    // Handle logout
     const handleLogout = () => {
-        // Replace with your actual logout logic
         setUser(null);
         setIsProfileOpen(false);
         navigate('/home');
     };
 
-    // Handle profile click
     const handleProfileClick = () => {
         navigate('/profile');
         setIsProfileOpen(false);
     };
 
-    // Format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -260,12 +250,19 @@ export default function Header() {
                                 {/* Dropdown menu */}
                                 {isProfileOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg py-1 z-10 border border-gray-700">
-                                        {user ? (
+                                        {status? (
                                             <>
-                                                <div className="px-4 py-2 border-b border-gray-700">
-                                                    <p className="text-sm font-medium text-white">{user.displayName}</p>
-                                                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                                                </div>
+                                                { user && user.displayName ? 
+                                                    (<div className="px-4 py-2 border-b border-gray-700">
+                                                        <p className="text-sm font-medium text-white">
+                                                            {user.displayName}
+                                                        </p>
+                                                        <p className="text-xs text-gray-400 truncate">
+                                                            {user.email}
+    
+                                                        </p>
+                                                    </div>): null
+                                                }
                                                 <button 
                                                     onClick={handleProfileClick}
                                                     className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -273,7 +270,7 @@ export default function Header() {
                                                     Your Profile
                                                 </button>
                                                 <button 
-                                                    onClick={() => navigate('/orders')}
+                                                    onClick={() => { navigate('/orders'); setIsProfileOpen(false); }}
                                                     className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                                                 >
                                                     Your Orders
@@ -289,13 +286,13 @@ export default function Header() {
                                         ) : (
                                             <>
                                                 <button 
-                                                    onClick={handleLogin}
+                                                    onClick={() => { navigate('/auth/signin'); setIsProfileOpen(false); }}
                                                     className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                                                 >
                                                     Sign in
                                                 </button>
                                                 <button 
-                                                    onClick={() => { navigate('/register'); setIsProfileOpen(false); }}
+                                                    onClick={() => { navigate('/auth/signup'); setIsProfileOpen(false); }}
                                                     className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                                                 >
                                                     Create account

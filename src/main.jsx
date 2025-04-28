@@ -5,11 +5,9 @@
   import App from './App.jsx'
   import { Provider } from 'react-redux'
   import store from './Store/store'
-  import AuthPage from './pages/AuthPage'
   import AdminPage from './pages/AdminPage'
   import AdminLogin from './pages/AdminLogin'
   import {
-    AuthLayout, 
     Home,
     Menu,
     Services,
@@ -28,6 +26,9 @@
     Customers,
     Restaurants} from './pages/admin/components/adminComponents.jsx'
   import Offers from './components/Offers/Offers.jsx'
+  import SignupPage from './pages/SignupPage.jsx'
+  import SigninPage from './pages/SigninPage.jsx'
+  import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
 
   const router = createBrowserRouter([
     // Main public routes
@@ -58,16 +59,25 @@
         {
           path: 'offers',
           element: <Offers />,
-        }
+        },
       ]
     },
     {
-      path: '/auth-page',
-      element: (
-        <AuthLayout authentication={false}>
-          <AuthPage />
-        </AuthLayout>
-      )
+      path: '/auth',
+      children:[
+        {
+          path: 'signin',
+          element: <SigninPage />
+        },
+        {
+          path: 'signup',
+          element: <SignupPage />
+        },
+        {
+          path:'forgot-password',
+          element: <ForgotPasswordPage />
+        },
+      ]
     },
     {
       path: '/admin',
