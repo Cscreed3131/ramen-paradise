@@ -13,10 +13,7 @@ export default function Header() {
     const profileDropdownRef = useRef(null);
     const cartDropdownRef = useRef(null);
     const status = useSelector((state) => state.auth.status);
-    
-    // Mock user state - replace with your actual auth implementation
-    const [user, setUser] = useState(null);
-    // Example user object: { uid: '123', displayName: 'John Doe', email: 'john@example.com', photoURL: 'https://...' }
+    const user = useSelector((state) => state.auth.userData);
     
     // Mock cart state - replace with your actual cart implementation
     const [cart, setCart] = useState({

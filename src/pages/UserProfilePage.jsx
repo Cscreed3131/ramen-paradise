@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../firebase/AuthService';
-
+import { useForm, Controller } from 'react-hook-form';
+import userService from '../firebase/UserService';
+import { signin } from '../features/authSlice';
 export default function UserProfilePage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
   const auth = useSelector((state) => state.auth);
-  const user = auth.user;
+  const user = auth.userData;
   
   const fileInputRef = useRef(null);
   const [imageFile, setImageFile] = useState(null);
@@ -15,8 +18,10 @@ export default function UserProfilePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoadingEmail, setIsLoadingEmail] = useState(true);
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
+  const [selectedFavorites, setSelectedFavorites] = useState([]);
   
+  // Initialize userData state with default values
   const [userData, setUserData] = useState({
     displayName: 'Guest User',
     email: 'guest@example.com',
@@ -25,91 +30,91 @@ export default function UserProfilePage() {
     addresses: [],
     dateJoined: new Date().toISOString(),
     bio: '',
-    favorite: [],
+    favorite: [], // Updated to match the new data structure
     preferences: {
       notifications: true,
       marketingEmails: false,
-      twoFactorAuth: true
+      twoFactorAuth: true,
+      spiceLevel: '3'
     }
   });
   
-  const [formData, setFormData] = useState({...userData});
+  // Initialize React Hook Form
+  const { control, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
+    defaultValues: {
+      displayName: userData.displayName,
+      email: userData.email,
+      phoneNumber: userData.phoneNumber,
+      currentAddress: '',
+      bio: userData.bio,
+      favorite: userData.favorite,
+      preferences: userData.preferences
+    }
+  });
   
+  // Update form defaults when userData changes
   useEffect(() => {
-    const fetchUserEmail = async () => {
-      try {
-        setIsLoadingEmail(true);
-        const email = await authService.getCurrentUserEmail();
-        if (email) {
-          setUserData(prevData => ({
-            ...prevData,
-            email
-          }));
-          setFormData(prevData => ({
-            ...prevData,
-            email
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching user email:", error);
-      } finally {
-        setIsLoadingEmail(false);
-      }
-    };
+    if (userData) {
+      reset({
+        displayName: userData.displayName,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber,
+        currentAddress: '',
+        bio: userData.bio,
+        favorite: userData.favorite,
+        preferences: userData.preferences
+      });
+    }
+  }, [userData, reset]);
 
-    fetchUserEmail();
-  }, []);
-  
   useEffect(() => {
     if (user) {
-      setUserData(prevData => ({
+      setUserData({
         displayName: user.displayName || 'Ramen Lover',
-        email: prevData.email || user.email || 'user@example.com',
+        email: user.email || 'user@example.com',
         photoURL: user.photoURL,
         phoneNumber: user.phoneNumber || '',
         addresses: user.addresses || [],
         dateJoined: user.createdAt || new Date().toISOString(),
         bio: user.bio || '',
-        favoriteRamen: user.favoriteRamen || '',
-        preferences: user.preferences || {
-          notifications: true,
-          marketingEmails: false,
-          twoFactorAuth: true
+        favorite: user.favorite || [], // Updated to match the new data structure
+        preferences: {
+          notifications: user.preferences?.notifications ?? true,
+          marketingEmails: user.preferences?.marketingEmails ?? false,
+          twoFactorAuth: user.preferences?.twoFactorAuth ?? true,
+          spiceLevel: user.preferences?.spiceLevel || '3'
         },
-        spiceLevel: user.preferences?.spiceLevel || '3'
-      }));
-
-      setFormData(prevData => ({
-        displayName: user.displayName || 'Ramen Lover',
-        email: prevData.email || user.email || 'user@example.com',
-        phoneNumber: user.phoneNumber || '',
-        currentAddress: '',
-        photoURL: user.photoURL,
-        bio: user.bio || '',
-        favoriteRamen: user.favoriteRamen || '',
-        preferences: user.preferences || {
-          notifications: true,
-          marketingEmails: false,
-          twoFactorAuth: true
-        },
-        spiceLevel: user.preferences?.spiceLevel || '3'
-      }));
+        uid: user.uid,
+        emailVerified: user.emailVerified,
+        ...Object.keys(user)
+          .filter(key => !['displayName', 'email', 'photoURL', 'phoneNumber', 'addresses', 
+                          'createdAt', 'bio', 'favorite', 'preferences', 'uid', 
+                          'emailVerified'].includes(key))
+          .reduce((obj, key) => {
+            obj[key] = user[key];
+            return obj;
+          }, {})
+      });
+      
+      setSelectedFavorites(user.favorite || []);
     }
   }, [user]);
   
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-  
   const handlePreferenceToggle = (preference) => {
-    setFormData({
-      ...formData,
-      preferences: {
-        ...formData.preferences,
-        [preference]: !formData.preferences[preference]
-      }
+    const currentPreferences = watch('preferences');
+    setValue('preferences', {
+      ...currentPreferences,
+      [preference]: !currentPreferences[preference]
     });
+  };
+
+  const handleFavoriteToggle = (ramenType) => {
+    const updatedFavorites = selectedFavorites.includes(ramenType)
+      ? selectedFavorites.filter(item => item !== ramenType)
+      : [...selectedFavorites, ramenType];
+    
+    setSelectedFavorites(updatedFavorites);
+    setValue('favorite', updatedFavorites);
   };
   
   const handleImageUpload = (e) => {
@@ -160,54 +165,67 @@ export default function UserProfilePage() {
     }
   };
   
-  const handleSaveProfile = async () => {
-    let photoURL = formData.photoURL;
-    
-    if (imageFile) {
-      const uploadedImageUrl = await uploadImageToServer();
-      if (uploadedImageUrl) {
-        photoURL = uploadedImageUrl;
+  const onSubmit = async (formData) => {
+    try {
+      setIsUploading(true);
+      let photoURL = userData.photoURL;
+      
+      if (imageFile) {
+        const uploadedImageUrl = await uploadImageToServer();
+        if (uploadedImageUrl) {
+          photoURL = uploadedImageUrl;
+        }
       }
+      
+      const updatedData = { 
+        ...formData, 
+        photoURL,
+        addresses: userData.addresses,
+        favorite: selectedFavorites
+      };
+      
+      if (userData.uid) {
+        await userService.updateUser(userData.uid, updatedData);
+        setUserData({ ...userData, ...updatedData });
+        dispatch(signin({ ...userData, ...updatedData }))
+        alert("Profile updated successfully!");
+      } else {
+        throw new Error("User ID not found.");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Failed to update profile. Please try again.");
+    } finally {
+      setIsUploading(false);
+      setImageFile(null);
+      setImagePreview(null);
+      setIsEditing(false);
     }
-    
-    const updatedData = { 
-      ...formData, 
-      photoURL,
-      addresses: userData.addresses // Preserve the addresses array
-    };
-    
-    setUserData({ ...userData, ...updatedData });
-    setFormData({
-      ...updatedData,
-      currentAddress: ''
-    });
-    setImageFile(null);
-    setImagePreview(null);
-    setIsEditing(false);
-    
-    // Here you would dispatch an action to update the user profile in Redux/Firebase
-    // dispatch(updateUserProfile(updatedData));
-    
-    // Show success notification
-    alert("Profile updated successfully!");
   };
   
   const handleCancel = () => {
-    // Reset form data to current user data
-    setFormData({
-      ...userData,
-      currentAddress: ''
+    // Reset form to current user data
+    reset({
+      displayName: userData.displayName,
+      email: userData.email,
+      phoneNumber: userData.phoneNumber,
+      currentAddress: '',
+      bio: userData.bio,
+      favorite: userData.favorite,
+      preferences: userData.preferences
     });
+    setSelectedFavorites(userData.favorite || []);
     setImagePreview(null);
     setImageFile(null);
     setIsEditing(false);
   };
   
   const handleAddAddress = () => {
-    if (formData.currentAddress && !userData.addresses.includes(formData.currentAddress)) {
-      const newAddresses = [...userData.addresses, formData.currentAddress];
+    const currentAddress = watch('currentAddress');
+    if (currentAddress && !userData.addresses.includes(currentAddress)) {
+      const newAddresses = [...userData.addresses, currentAddress];
       setUserData({ ...userData, addresses: newAddresses });
-      setFormData({ ...formData, currentAddress: '' });
+      setValue('currentAddress', '');
     }
   };
   
@@ -220,6 +238,62 @@ export default function UserProfilePage() {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  // Define available ramen types
+  const ramenTypes = [
+    { id: 'tonkotsu', name: 'Tonkotsu (Pork Bone Broth)' },
+    { id: 'shoyu', name: 'Shoyu (Soy Sauce Based)' },
+    { id: 'miso', name: 'Miso (Fermented Soybean)' },
+    { id: 'shio', name: 'Shio (Salt Based)' },
+    { id: 'tantanmen', name: 'Tantanmen (Spicy Sesame)' },
+    { id: 'tsukemen', name: 'Tsukemen (Dipping Ramen)' },
+  ];
+
+  // Modified profile tab section
+  const renderFavoriteRamenSection = () => (
+    <div>
+      <label className="block text-gray-400 mb-2 font-medium">Favorite Ramen Styles</label>
+      {isEditing ? (
+        <div className="space-y-2">
+          {ramenTypes.map((ramen) => (
+            <div key={ramen.id} className="flex items-center">
+              <input
+                type="checkbox"
+                id={`ramen-${ramen.id}`}
+                checked={selectedFavorites.includes(ramen.id)}
+                onChange={() => handleFavoriteToggle(ramen.id)}
+                className="w-4 h-4 mr-3 text-yellow-500 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500"
+              />
+              <label htmlFor={`ramen-${ramen.id}`} className="text-gray-300">
+                {ramen.name}
+              </label>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-white bg-gray-700/50 px-4 py-3 rounded-lg">
+          {userData.favorite && userData.favorite.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {userData.favorite.map(favoriteId => {
+                const ramen = ramenTypes.find(r => r.id === favoriteId);
+                return ramen ? (
+                  <span 
+                    key={ramen.id} 
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-400"
+                  >
+                    <span className="h-2 w-2 bg-yellow-500 rounded-full mr-2"></span>
+                    {ramen.name}
+                  </span>
+                ) : null;
+              })}
+            </div>
+          ) : (
+            "No favorites selected yet."
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   if (!auth.status || auth.status === 'loading') {
     return (
@@ -255,6 +329,7 @@ export default function UserProfilePage() {
     );
   }
   
+  // In your render method, replace the favoriteRamen select dropdown with the new multi-select component
   return (
     <div className="min-h-screen bg-gray-900 py-8 px-4 sm:px-6">
       {/* Header with logo */}
@@ -276,7 +351,7 @@ export default function UserProfilePage() {
         </div>
       </div>
       
-      <div className="max-w-7xl mx-auto">
+      <form onSubmit={isEditing ? handleSubmit(onSubmit) : undefined} className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden mb-6">
           <div className="p-6">
@@ -294,6 +369,7 @@ export default function UserProfilePage() {
               <div className="mt-4 md:mt-0">
                 {!isEditing ? (
                   <button 
+                    type="button"
                     onClick={() => setIsEditing(true)}
                     className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition duration-300 transform hover:-translate-y-1 flex items-center"
                   >
@@ -305,7 +381,7 @@ export default function UserProfilePage() {
                 ) : (
                   <div className="flex space-x-3">
                     <button 
-                      onClick={handleSaveProfile}
+                      type="submit"
                       disabled={isUploading}
                       className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-lg transition duration-300 flex items-center"
                     >
@@ -327,6 +403,7 @@ export default function UserProfilePage() {
                       )}
                     </button>
                     <button 
+                      type="button"
                       onClick={handleCancel}
                       className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition duration-300 flex items-center"
                     >
@@ -407,12 +484,16 @@ export default function UserProfilePage() {
                     </svg>
                   </div>
                   {isEditing ? (
-                    <input 
-                      type="tel" 
-                      name="phoneNumber" 
-                      value={formData.phoneNumber} 
-                      onChange={handleInputChange} 
-                      className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    <Controller
+                      name="phoneNumber"
+                      control={control}
+                      render={({ field }) => (
+                        <input 
+                          type="tel" 
+                          {...field}
+                          className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        />
+                      )}
                     />
                   ) : (
                     <p className="text-gray-300">{userData.phoneNumber || 'No phone number'}</p>
@@ -433,6 +514,7 @@ export default function UserProfilePage() {
                 <div className="mt-8 w-full">
                   <div className="flex justify-between space-x-2">
                     <button 
+                      type="button"
                       onClick={() => setActiveTab('profile')}
                       className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeTab === 'profile' 
@@ -443,6 +525,7 @@ export default function UserProfilePage() {
                       Profile
                     </button>
                     <button 
+                      type="button"
                       onClick={() => setActiveTab('addresses')}
                       className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeTab === 'addresses' 
@@ -453,6 +536,7 @@ export default function UserProfilePage() {
                       Addresses
                     </button>
                     <button 
+                      type="button"
                       onClick={() => setActiveTab('preferences')}
                       className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeTab === 'preferences' 
@@ -481,12 +565,22 @@ export default function UserProfilePage() {
                     <div>
                       <label className="block text-gray-400 mb-2 font-medium">Full Name</label>
                       {isEditing ? (
-                        <input 
-                          type="text" 
-                          name="displayName" 
-                          value={formData.displayName} 
-                          onChange={handleInputChange} 
-                          className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        <Controller
+                          name="displayName"
+                          control={control}
+                          rules={{ required: "Name is required" }}
+                          render={({ field }) => (
+                            <div>
+                              <input 
+                                {...field}
+                                type="text" 
+                                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                              />
+                              {errors.displayName && (
+                                <p className="mt-1 text-red-500 text-sm">{errors.displayName.message}</p>
+                              )}
+                            </div>
+                          )}
                         />
                       ) : (
                         <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg">{userData.displayName}</p>
@@ -509,14 +603,18 @@ export default function UserProfilePage() {
                     <div>
                       <label className="block text-gray-400 mb-2 font-medium">Bio</label>
                       {isEditing ? (
-                        <textarea 
-                          name="bio" 
-                          value={formData.bio} 
-                          onChange={handleInputChange} 
-                          rows="4" 
-                          placeholder="Tell us a bit about yourself and your ramen preferences..."
-                          className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        ></textarea>
+                        <Controller
+                          name="bio"
+                          control={control}
+                          render={({ field }) => (
+                            <textarea 
+                              {...field}
+                              rows="4" 
+                              placeholder="Tell us a bit about yourself and your ramen preferences..."
+                              className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                            ></textarea>
+                          )}
+                        />
                       ) : (
                         <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg min-h-[80px]">
                           {userData.bio || "No bio provided yet."}
@@ -524,45 +622,16 @@ export default function UserProfilePage() {
                       )}
                     </div>
                     
-                    <div>
-                      <label className="block text-gray-400 mb-2 font-medium">Favorite Ramen Style</label>
-                      {isEditing ? (
-                        <select
-                          name="favoriteRamen"
-                          value={formData.favoriteRamen}
-                          onChange={handleInputChange}
-                          className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        >
-                          <option value="">Select your favorite...</option>
-                          <option value="tonkotsu">Tonkotsu (Pork Bone Broth)</option>
-                          <option value="shoyu">Shoyu (Soy Sauce Based)</option>
-                          <option value="miso">Miso (Fermented Soybean)</option>
-                          <option value="shio">Shio (Salt Based)</option>
-                          <option value="tantanmen">Tantanmen (Spicy Sesame)</option>
-                          <option value="tsukemen">Tsukemen (Dipping Ramen)</option>
-                        </select>
-                      ) : (
-                        <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg">
-                          {userData.favoriteRamen ? (
-                            <span className="inline-flex items-center">
-                              <span className="h-2 w-2 bg-yellow-500 rounded-full mr-2"></span>
-                              {userData.favoriteRamen.charAt(0).toUpperCase() + userData.favoriteRamen.slice(1)}
-                            </span>
-                          ) : (
-                            "No favorite selected yet."
-                          )}
-                        </p>
-                      )}
-                    </div>
+                    {/* Replace the old favoriteRamen selector with the new multi-select component */}
+                    {renderFavoriteRamenSection()}
                   </div>
                 </div>
               </div>
             )}
             
-            {/* Rest of the component remains the same */}
+            {/* Addresses Tab */}
             {(!isEditing && activeTab === 'addresses' || isEditing) && (
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
-                {/* Addresses content */}
                 <div className="px-6 py-4 border-b border-gray-700">
                   <h3 className="text-lg font-semibold text-white">Delivery Addresses</h3>
                 </div>
@@ -571,15 +640,20 @@ export default function UserProfilePage() {
                     <div className="mb-6">
                       <label className="block text-gray-400 mb-2 font-medium">Add New Address</label>
                       <div className="flex">
-                        <input
-                          type="text"
+                        <Controller
                           name="currentAddress"
-                          value={formData.currentAddress}
-                          onChange={handleInputChange}
-                          placeholder="Enter your delivery address"
-                          className="flex-1 bg-gray-700 text-white px-4 py-3 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              placeholder="Enter your delivery address"
+                              className="flex-1 bg-gray-700 text-white px-4 py-3 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                            />
+                          )}
                         />
                         <button
+                          type="button"
                           onClick={handleAddAddress}
                           className="px-4 py-3 bg-gradient-to-r from-yellow-500 to-red-500 text-white rounded-r-lg hover:from-yellow-600 hover:to-red-600 transition-colors"
                         >
@@ -611,6 +685,7 @@ export default function UserProfilePage() {
                           </div>
                           {isEditing && (
                             <button 
+                              type="button"
                               onClick={() => handleRemoveAddress(index)}
                               className="text-gray-400 hover:text-red-400 transition-colors"
                             >
@@ -632,6 +707,7 @@ export default function UserProfilePage() {
                       <p className="text-gray-400 mb-5">You haven't added any delivery addresses.</p>
                       {!isEditing && (
                         <button 
+                          type="button"
                           onClick={() => setIsEditing(true)}
                           className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition-colors"
                         >
@@ -647,7 +723,6 @@ export default function UserProfilePage() {
             {/* Preferences Tab */}
             {(!isEditing && activeTab === 'preferences' || isEditing) && (
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
-                {/* Preferences content */}
                 <div className="px-6 py-4 border-b border-gray-700">
                   <h3 className="text-lg font-semibold text-white">Preferences</h3>
                 </div>
@@ -663,12 +738,12 @@ export default function UserProfilePage() {
                         <div 
                           onClick={() => handlePreferenceToggle('notifications')} 
                           className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
-                            formData.preferences.notifications ? 'bg-yellow-500' : 'bg-gray-600'
+                            watch('preferences.notifications') ? 'bg-yellow-500' : 'bg-gray-600'
                           }`}
                         >
                           <span 
                             className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform ${
-                              formData.preferences.notifications ? 'translate-x-6' : ''
+                              watch('preferences.notifications') ? 'translate-x-6' : ''
                             }`}
                           />
                         </div>
@@ -692,12 +767,12 @@ export default function UserProfilePage() {
                         <div 
                           onClick={() => handlePreferenceToggle('marketingEmails')} 
                           className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
-                            formData.preferences.marketingEmails ? 'bg-yellow-500' : 'bg-gray-600'
+                            watch('preferences.marketingEmails') ? 'bg-yellow-500' : 'bg-gray-600'
                           }`}
                         >
                           <span 
                             className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform ${
-                              formData.preferences.marketingEmails ? 'translate-x-6' : ''
+                              watch('preferences.marketingEmails') ? 'translate-x-6' : ''
                             }`}
                           />
                         </div>
@@ -721,12 +796,12 @@ export default function UserProfilePage() {
                         <div 
                           onClick={() => handlePreferenceToggle('twoFactorAuth')} 
                           className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
-                            formData.preferences.twoFactorAuth ? 'bg-yellow-500' : 'bg-gray-600'
+                            watch('preferences.twoFactorAuth') ? 'bg-yellow-500' : 'bg-gray-600'
                           }`}
                         >
                           <span 
                             className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform ${
-                              formData.preferences.twoFactorAuth ? 'translate-x-6' : ''
+                              watch('preferences.twoFactorAuth') ? 'translate-x-6' : ''
                             }`}
                           />
                         </div>
@@ -747,17 +822,22 @@ export default function UserProfilePage() {
                     <div className="flex items-center justify-between">
                       {[1, 2, 3, 4, 5].map((level) => (
                         <label key={level} className="flex flex-col items-center cursor-pointer group">
-                          <input
-                            type="radio"
-                            name="spiceLevel"
-                            value={level}
-                            className="sr-only"
-                            checked={parseInt(formData.spiceLevel) === level}
-                            onChange={() => isEditing && setFormData({...formData, spiceLevel: level.toString()})}
-                            disabled={!isEditing}
+                          <Controller
+                            name="preferences.spiceLevel"
+                            control={control}
+                            render={({ field }) => (
+                              <input
+                                type="radio"
+                                className="sr-only"
+                                value={level.toString()}
+                                checked={field.value === level.toString()}
+                                onChange={() => isEditing && setValue('preferences.spiceLevel', level.toString())}
+                                disabled={!isEditing}
+                              />
+                            )}
                           />
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                            parseInt(formData.spiceLevel) === level 
+                            watch('preferences.spiceLevel') === level.toString() 
                               ? 'bg-gradient-to-br from-yellow-500 to-red-600 text-white transform scale-110' 
                               : 'bg-gray-700 text-gray-400 group-hover:bg-gray-600'
                           } ${!isEditing ? 'cursor-default' : 'cursor-pointer'}`}>
@@ -779,7 +859,7 @@ export default function UserProfilePage() {
             )}
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
