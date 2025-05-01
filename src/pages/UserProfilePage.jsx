@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-// Import these if you're using Firebase storage
-// import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import authService from '../firebase/AuthService';
 
 export default function UserProfilePage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  // Access user from Redux store
   const auth = useSelector((state) => state.auth);
   const user = auth.user;
   
@@ -15,8 +13,10 @@ export default function UserProfilePage() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoadingEmail, setIsLoadingEmail] = useState(true);
   
-  // If no user data, will be filled with placeholder data
   const [userData, setUserData] = useState({
     displayName: 'Guest User',
     email: 'guest@example.com',
@@ -24,70 +24,76 @@ export default function UserProfilePage() {
     phoneNumber: '',
     addresses: [],
     dateJoined: new Date().toISOString(),
-    orderCount: 0
+    bio: '',
+    favorite: [],
+    preferences: {
+      notifications: true,
+      marketingEmails: false,
+      twoFactorAuth: true
+    }
   });
   
-  const [activeTab, setActiveTab] = useState('profile');
-  const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({...userData});
-  const [orderHistory, setOrderHistory] = useState([]);
   
-  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        setIsLoadingEmail(true);
+        const email = await authService.getCurrentUserEmail();
+        if (email) {
+          setUserData(prevData => ({
+            ...prevData,
+            email
+          }));
+          setFormData(prevData => ({
+            ...prevData,
+            email
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching user email:", error);
+      } finally {
+        setIsLoadingEmail(false);
+      }
+    };
+
+    fetchUserEmail();
+  }, []);
+  
   useEffect(() => {
     if (user) {
-      // Fetch user profile data from backend
-      // This is a mock implementation
-      setUserData({
+      setUserData(prevData => ({
         displayName: user.displayName || 'Ramen Lover',
-        email: user.email || 'user@example.com',
+        email: prevData.email || user.email || 'user@example.com',
         photoURL: user.photoURL,
         phoneNumber: user.phoneNumber || '',
         addresses: user.addresses || [],
         dateJoined: user.createdAt || new Date().toISOString(),
-        orderCount: 12
-      });
-      setFormData({
+        bio: user.bio || '',
+        favoriteRamen: user.favoriteRamen || '',
+        preferences: user.preferences || {
+          notifications: true,
+          marketingEmails: false,
+          twoFactorAuth: true
+        },
+        spiceLevel: user.preferences?.spiceLevel || '3'
+      }));
+
+      setFormData(prevData => ({
         displayName: user.displayName || 'Ramen Lover',
-        email: user.email || 'user@example.com',
+        email: prevData.email || user.email || 'user@example.com',
         phoneNumber: user.phoneNumber || '',
-        currentAddress: user.addresses?.[0] || '',
+        currentAddress: '',
         photoURL: user.photoURL,
-      });
-      
-      // Fetch order history - mock data
-      setOrderHistory([
-        {
-          id: 'ORD-12345',
-          date: '2025-04-10T14:30:00Z',
-          total: 42.99,
-          status: 'Delivered',
-          items: [
-            { name: 'Spicy Miso Ramen', quantity: 2, price: 15.99 },
-            { name: 'Gyoza', quantity: 1, price: 7.99 }
-          ]
+        bio: user.bio || '',
+        favoriteRamen: user.favoriteRamen || '',
+        preferences: user.preferences || {
+          notifications: true,
+          marketingEmails: false,
+          twoFactorAuth: true
         },
-        {
-          id: 'ORD-12340',
-          date: '2025-04-01T18:45:00Z',
-          total: 28.99,
-          status: 'Delivered',
-          items: [
-            { name: 'Tonkotsu Ramen', quantity: 1, price: 16.99 },
-            { name: 'Green Tea', quantity: 2, price: 3.99 }
-          ]
-        },
-        {
-          id: 'ORD-12335',
-          date: '2025-03-15T19:20:00Z',
-          total: 33.99,
-          status: 'Delivered',
-          items: [
-            { name: 'Shoyu Ramen', quantity: 1, price: 14.99 },
-            { name: 'Takoyaki', quantity: 1, price: 8.99 },
-            { name: 'Sake', quantity: 1, price: 9.99 }
-          ]
-        }
-      ]);
+        spiceLevel: user.preferences?.spiceLevel || '3'
+      }));
     }
   }, [user]);
   
@@ -96,17 +102,25 @@ export default function UserProfilePage() {
     setFormData({ ...formData, [name]: value });
   };
   
+  const handlePreferenceToggle = (preference) => {
+    setFormData({
+      ...formData,
+      preferences: {
+        ...formData.preferences,
+        [preference]: !formData.preferences[preference]
+      }
+    });
+  };
+  
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // File size validation (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("File is too large. Maximum size is 5MB.");
       return;
     }
     
-    // File type validation
     if (!file.type.match('image.*')) {
       alert("Only image files are allowed.");
       return;
@@ -114,7 +128,6 @@ export default function UserProfilePage() {
     
     setImageFile(file);
     
-    // Create a preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
@@ -125,7 +138,7 @@ export default function UserProfilePage() {
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
-  // this logic can be shifted to appwrite.TODO
+  
   const uploadImageToServer = async () => {
     if (!imageFile) return null;
     
@@ -133,15 +146,6 @@ export default function UserProfilePage() {
     
     try {
       // This is where you would upload the file to your storage service
-      // Example for Firebase Storage:
-      /*
-      const storage = getStorage();
-      const storageRef = ref(storage, `profile-photos/${user.uid}/${Date.now()}-${imageFile.name}`);
-      await uploadBytes(storageRef, imageFile);
-      const downloadURL = await getDownloadURL(storageRef);
-      return downloadURL;
-      */
-      
       // For now, we'll just fake it with the preview URL
       return new Promise(resolve => {
         setTimeout(() => {
@@ -157,7 +161,6 @@ export default function UserProfilePage() {
   };
   
   const handleSaveProfile = async () => {
-    // First handle image upload if there's a new image
     let photoURL = formData.photoURL;
     
     if (imageFile) {
@@ -167,32 +170,58 @@ export default function UserProfilePage() {
       }
     }
     
-    // Save profile changes to backend
-    // For now, just update local state
-    const updatedData = { ...formData, photoURL };
+    const updatedData = { 
+      ...formData, 
+      photoURL,
+      addresses: userData.addresses // Preserve the addresses array
+    };
+    
     setUserData({ ...userData, ...updatedData });
-    setFormData(updatedData);
+    setFormData({
+      ...updatedData,
+      currentAddress: ''
+    });
     setImageFile(null);
     setImagePreview(null);
-    setEditMode(false);
+    setIsEditing(false);
     
     // Here you would dispatch an action to update the user profile in Redux/Firebase
     // dispatch(updateUserProfile(updatedData));
+    
+    // Show success notification
+    alert("Profile updated successfully!");
+  };
+  
+  const handleCancel = () => {
+    // Reset form data to current user data
+    setFormData({
+      ...userData,
+      currentAddress: ''
+    });
+    setImagePreview(null);
+    setImageFile(null);
+    setIsEditing(false);
   };
   
   const handleAddAddress = () => {
     if (formData.currentAddress && !userData.addresses.includes(formData.currentAddress)) {
       const newAddresses = [...userData.addresses, formData.currentAddress];
       setUserData({ ...userData, addresses: newAddresses });
+      setFormData({ ...formData, currentAddress: '' });
     }
+  };
+  
+  const handleRemoveAddress = (indexToRemove) => {
+    const newAddresses = userData.addresses.filter((_, index) => index !== indexToRemove);
+    setUserData({ ...userData, addresses: newAddresses });
   };
   
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
-  if (!auth.status || auth.status === 'loading') { // this has to change otherwise it will create potential issues in the application.TODO
+
+  if (!auth.status || auth.status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="animate-pulse flex flex-col items-center">
@@ -203,7 +232,7 @@ export default function UserProfilePage() {
       </div>
     );
   }
-  
+
   if (!user && auth.status === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -214,7 +243,7 @@ export default function UserProfilePage() {
           <h2 className="text-2xl font-bold text-white mb-2">Not Signed In</h2>
           <p className="text-gray-300 mb-6">You need to sign in to view your profile.</p>
           <div className="flex space-x-4 justify-center">
-            <Link to="/signin" className="px-6 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors">
+            <Link to="/signin" className="px-6 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition-colors">
               Sign In
             </Link>
             <Link to="/auth/signup" className="px-6 py-2 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors">
@@ -227,23 +256,99 @@ export default function UserProfilePage() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8 text-center">
-          <Link to="/" className="inline-flex items-center justify-center mb-6">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-red-500 flex items-center justify-center text-white font-bold text-xl">R</div>
+    <div className="min-h-screen bg-gray-900 py-8 px-4 sm:px-6">
+      {/* Header with logo */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="flex justify-between items-center">
+          <Link to="/" className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500 to-red-500 flex items-center justify-center text-white font-bold text-xl">R</div>
+            <span className="ml-2 text-white text-lg font-medium">Ramen Paradise</span>
           </Link>
-          <h1 className="text-3xl font-bold text-white">Your Profile</h1>
-          <p className="mt-2 text-gray-400">Manage your account details and preferences</p>
+          
+          <div className="flex space-x-4">
+            <Link to="/orders" className="text-gray-300 hover:text-white transition-colors">
+              Orders
+            </Link>
+            <Link to="/cart" className="text-gray-300 hover:text-white transition-colors">
+              Cart
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden mb-6">
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  User <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-500">Profile</span>
+                </h2>
+                <p className="text-gray-400">
+                  View and manage your personal information
+                </p>
+                <div className="w-24 h-1 bg-gradient-to-r from-yellow-400 to-red-500 mt-4"></div>
+              </div>
+              
+              <div className="mt-4 md:mt-0">
+                {!isEditing ? (
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition duration-300 transform hover:-translate-y-1 flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Profile
+                  </button>
+                ) : (
+                  <div className="flex space-x-3">
+                    <button 
+                      onClick={handleSaveProfile}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-lg transition duration-300 flex items-center"
+                    >
+                      {isUploading ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Save
+                        </>
+                      )}
+                    </button>
+                    <button 
+                      onClick={handleCancel}
+                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition duration-300 flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Profile Card */}
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-xl overflow-hidden">
-          {/* Profile Header with editable photo */}
-          <div className="relative bg-gradient-to-r from-yellow-600 to-red-600 h-40 md:h-60">
-            <div className="absolute bottom-0 left-0 w-full p-6 flex items-end backdrop-blur-sm bg-black/30">
+        {/* Profile content */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Profile Card - Left Column */}
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+            <div className="p-6 flex flex-col items-center">
               <div className="relative">
-                <div className="absolute bottom-0 w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-800 overflow-hidden group">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-700">
                   {(imagePreview || userData.photoURL) ? (
                     <img 
                       src={imagePreview || userData.photoURL} 
@@ -251,673 +356,423 @@ export default function UserProfilePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-700 flex items-center justify-center text-3xl text-white">
+                    <div className="w-full h-full flex items-center justify-center text-4xl text-yellow-400 bg-gray-700">
                       {userData.displayName?.charAt(0).toUpperCase() || 'R'}
                     </div>
                   )}
-                  
-                  {/* Photo edit overlay */}
-                  <div 
-                    className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    onClick={triggerFileInput}
-                  >
-                    <div className="text-white text-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="text-sm">Change Photo</span>
+                </div>
+                {isEditing && (
+                  <label className="absolute bottom-0 right-0 bg-yellow-500 hover:bg-yellow-600 text-white w-8 h-8 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleImageUpload}
+                      ref={fileInputRef}
+                    />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </label>
+                )}
+              </div>
+              
+              <h3 className="mt-4 text-xl font-bold text-white">{userData.displayName}</h3>
+              <span className="px-3 py-1 mt-2 bg-gradient-to-r from-yellow-500/20 to-red-500/20 rounded-full text-yellow-400 text-sm font-medium">
+                Ramen Enthusiast
+              </span>
+              
+              <div className="mt-6 w-full space-y-4">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-400 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  {isLoadingEmail ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="text-gray-300">Loading email...</span>
                     </div>
+                  ) : (
+                    <p className="text-gray-300">{userData.email}</p>
+                  )}
+                </div>
+                
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-400 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  {isEditing ? (
+                    <input 
+                      type="tel" 
+                      name="phoneNumber" 
+                      value={formData.phoneNumber} 
+                      onChange={handleInputChange} 
+                      className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    />
+                  ) : (
+                    <p className="text-gray-300">{userData.phoneNumber || 'No phone number'}</p>
+                  )}
+                </div>
+                
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-400 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-300">Joined: {formatDate(userData.dateJoined)}</p>
+                </div>
+              </div>
+              
+              {!isEditing && (
+                <div className="mt-8 w-full">
+                  <div className="flex justify-between space-x-2">
+                    <button 
+                      onClick={() => setActiveTab('profile')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeTab === 'profile' 
+                          ? 'bg-gradient-to-r from-yellow-500/20 to-red-500/20 text-yellow-400' 
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Profile
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('addresses')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeTab === 'addresses' 
+                          ? 'bg-gradient-to-r from-yellow-500/20 to-red-500/20 text-yellow-400' 
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Addresses
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('preferences')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeTab === 'preferences' 
+                          ? 'bg-gradient-to-r from-yellow-500/20 to-red-500/20 text-yellow-400' 
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Preferences
+                    </button>
                   </div>
                 </div>
-                <div className="invisible md:h-32"></div>
-                
-                {/* Hidden file input */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-              </div>
-              <div className="ml-32 md:ml-40">
-                <h2 className="text-white text-2xl font-bold">{userData.displayName}</h2>
-                <p className="text-gray-200">{userData.email}</p>
-                <p className="text-yellow-300 text-sm mt-1">Member since {formatDate(userData.dateJoined)}</p>
-              </div>
+              )}
             </div>
           </div>
           
-          {/* Tabs */}
-          <div className="flex border-b border-gray-700">
-            <button 
-              onClick={() => setActiveTab('profile')}
-              className={`py-4 px-6 focus:outline-none ${
-                activeTab === 'profile'
-                  ? 'border-b-2 border-yellow-500 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Personal Info
-            </button>
-            <button 
-              onClick={() => setActiveTab('orders')}
-              className={`py-4 px-6 focus:outline-none ${
-                activeTab === 'orders'
-                  ? 'border-b-2 border-yellow-500 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Orders
-            </button>
-            <button 
-              onClick={() => setActiveTab('settings')}
-              className={`py-4 px-6 focus:outline-none ${
-                activeTab === 'settings'
-                  ? 'border-b-2 border-yellow-500 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Settings
-            </button>
-          </div>
-          
-          {/* Tab Content */}
-          <div className="p-6">
-            {/* Profile Information */}
-            {activeTab === 'profile' && (
-              <div className="space-y-8">
-                {/* Profile Summary */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-800 rounded-lg">
-                  <div className="flex space-x-4 items-center mb-4 md:mb-0">
-                    <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-white">Personal Information</h3>
-                      <p className="text-gray-400">Update your personal details</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setEditMode(!editMode)}
-                    className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-                  >
-                    {editMode ? 'Cancel' : 'Edit Profile'}
-                  </button>
+          {/* Main Info - Middle and Right Column */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Profile Information Tab */}
+            {(isEditing || activeTab === 'profile') && (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-700">
+                  <h3 className="text-lg font-semibold text-white">Profile Information</h3>
                 </div>
-                
-                {editMode ? (
-                  /* Edit Form */
-                  <div className="space-y-6 p-4 bg-gray-800 rounded-lg">
-                    {/* Profile Photo Edit Section */}
-                    <div className="p-4 border border-gray-700 rounded-lg">
-                      <h4 className="text-white font-medium mb-4">Profile Photo</h4>
-                      <div className="flex flex-col sm:flex-row items-center gap-6">
-                        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-gray-700">
-                          {(imagePreview || userData.photoURL) ? (
-                            <img 
-                              src={imagePreview || userData.photoURL} 
-                              alt={userData.displayName} 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-700 flex items-center justify-center text-3xl text-white">
-                              {userData.displayName?.charAt(0).toUpperCase() || 'R'}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-col gap-3">
-                          <button 
-                            type="button"
-                            onClick={triggerFileInput}
-                            className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors flex items-center"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Upload Photo
-                          </button>
-                          
-                          {imagePreview && (
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                setImagePreview(null);
-                                setImageFile(null);
-                              }}
-                              className="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
-                            >
-                              Remove New Photo
-                            </button>
-                          )}
-                          
-                          {userData.photoURL && !imagePreview && (
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                // This would typically call an API to remove the photo
-                                setFormData({...formData, photoURL: null});
-                              }}
-                              className="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
-                            >
-                              Remove Current Photo
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <p className="text-xs text-gray-400 mt-4">
-                        Recommended: Square image, at least 300x300 pixels, maximum size 5MB.
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label htmlFor="displayName" className="block text-sm font-medium text-gray-300">
-                          Full Name
-                        </label>
-                        <input
-                          id="displayName"
-                          name="displayName"
-                          type="text"
-                          value={formData.displayName}
-                          onChange={handleInputChange}
-                          autoComplete="off"
-                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                <div className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-gray-400 mb-2 font-medium">Full Name</label>
+                      {isEditing ? (
+                        <input 
+                          type="text" 
+                          name="displayName" 
+                          value={formData.displayName} 
+                          onChange={handleInputChange} 
+                          className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                         />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                          Email Address
-                        </label>
-                        <input
-                          id="email"
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          disabled // Email changes typically require verification
-                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
-                        />
-                        <p className="text-xs text-gray-400">Contact support to change your email address</p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-300">
-                          Phone Number
-                        </label>
-                        <input
-                          id="phoneNumber"
-                          name="phoneNumber"
-                          type="tel"
-                          value={formData.phoneNumber}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      {/* Address input */}
-                      <div className="space-y-2">
-                        <label htmlFor="currentAddress" className="block text-sm font-medium text-gray-300">
-                          Add New Address
-                        </label>
-                        <div className="flex">
-                          <input
-                            id="currentAddress"
-                            name="currentAddress"
-                            type="text"
-                            value={formData.currentAddress}
-                            onChange={handleInputChange}
-                            placeholder="Enter delivery address"
-                            className="flex-grow px-4 py-3 bg-gray-700 border border-gray-600 rounded-l-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddAddress}
-                            className="px-4 py-3 bg-yellow-500 text-white rounded-r-lg hover:bg-yellow-600"
-                          >
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Existing addresses */}
-                    {userData.addresses.length > 0 && (
-                      <div className="space-y-3">
-                        <h4 className="text-white font-medium">Your Addresses</h4>
-                        {userData.addresses.map((address, index) => (
-                          <div key={index} className="p-3 border border-gray-700 rounded-lg flex justify-between items-center">
-                            <p className="text-white">{address}</p>
-                            {index === 0 && (
-                              <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">Default</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-end space-x-4 mt-6">
-                      <button 
-                        onClick={() => {
-                          setEditMode(false);
-                          setImagePreview(null);
-                          setImageFile(null);
-                        }} 
-                        className="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={handleSaveProfile}
-                        disabled={isUploading}
-                        className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center"
-                      >
-                        {isUploading ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Saving...
-                          </>
-                        ) : (
-                          "Save Changes"
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* View Profile */
-                  <div className="space-y-6">
-                    <div className="p-4 bg-gray-800 rounded-lg">
-                      <h3 className="text-md font-medium text-gray-300 mb-4">Personal Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
-                        <div>
-                          <p className="text-sm text-gray-400">Full Name</p>
-                          <p className="text-white">{userData.displayName}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-400">Email Address</p>
-                          <p className="text-white">{userData.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-400">Phone Number</p>
-                          <p className="text-white">{userData.phoneNumber || 'Not provided'}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-400">Member Since</p>
-                          <p className="text-white">{formatDate(userData.dateJoined)}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-gray-800 rounded-lg">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-md font-medium text-gray-300">Your Addresses</h3>
-                        {userData.addresses.length < 3 && (
-                          <button 
-                            onClick={() => setEditMode(true)}
-                            className="text-sm px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
-                          >
-                            Add New
-                          </button>
-                        )}
-                      </div>
-                      
-                      {userData.addresses.length > 0 ? (
-                        <div className="space-y-3">
-                          {userData.addresses.map((address, index) => (
-                            <div key={index} className="p-3 border border-gray-700 rounded-lg">
-                              <div className="flex justify-between">
-                                <p className="text-white">{address}</p>
-                                {index === 0 && (
-                                  <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">Default</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
                       ) : (
-                        <div className="text-center py-6">
-                          <p className="text-gray-400 mb-4">You haven't added any delivery addresses yet.</p>
-                          <button 
-                            onClick={() => setEditMode(true)}
-                            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-                          >
-                            Add Address
-                          </button>
-                        </div>
+                        <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg">{userData.displayName}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-400 mb-2 font-medium">Email</label>
+                      <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg">
+                        {isLoadingEmail ? (
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                            <span>Loading email...</span>
+                          </div>
+                        ) : userData.email}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500">Your email cannot be changed.</p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-400 mb-2 font-medium">Bio</label>
+                      {isEditing ? (
+                        <textarea 
+                          name="bio" 
+                          value={formData.bio} 
+                          onChange={handleInputChange} 
+                          rows="4" 
+                          placeholder="Tell us a bit about yourself and your ramen preferences..."
+                          className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        ></textarea>
+                      ) : (
+                        <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg min-h-[80px]">
+                          {userData.bio || "No bio provided yet."}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-400 mb-2 font-medium">Favorite Ramen Style</label>
+                      {isEditing ? (
+                        <select
+                          name="favoriteRamen"
+                          value={formData.favoriteRamen}
+                          onChange={handleInputChange}
+                          className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        >
+                          <option value="">Select your favorite...</option>
+                          <option value="tonkotsu">Tonkotsu (Pork Bone Broth)</option>
+                          <option value="shoyu">Shoyu (Soy Sauce Based)</option>
+                          <option value="miso">Miso (Fermented Soybean)</option>
+                          <option value="shio">Shio (Salt Based)</option>
+                          <option value="tantanmen">Tantanmen (Spicy Sesame)</option>
+                          <option value="tsukemen">Tsukemen (Dipping Ramen)</option>
+                        </select>
+                      ) : (
+                        <p className="text-white bg-gray-700/50 px-4 py-3 rounded-lg">
+                          {userData.favoriteRamen ? (
+                            <span className="inline-flex items-center">
+                              <span className="h-2 w-2 bg-yellow-500 rounded-full mr-2"></span>
+                              {userData.favoriteRamen.charAt(0).toUpperCase() + userData.favoriteRamen.slice(1)}
+                            </span>
+                          ) : (
+                            "No favorite selected yet."
+                          )}
+                        </p>
                       )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
             
-            {/* Orders Tab */}
-            {activeTab === 'orders' && (
-              <div className="space-y-6">
-                <div className="p-4 bg-gray-800 rounded-lg">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                    <div className="flex space-x-4 items-center mb-4 md:mb-0">
-                      <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-white">Order History</h3>
-                        <p className="text-gray-400">View and manage your orders</p>
+            {/* Rest of the component remains the same */}
+            {(!isEditing && activeTab === 'addresses' || isEditing) && (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+                {/* Addresses content */}
+                <div className="px-6 py-4 border-b border-gray-700">
+                  <h3 className="text-lg font-semibold text-white">Delivery Addresses</h3>
+                </div>
+                <div className="p-6">
+                  {isEditing && (
+                    <div className="mb-6">
+                      <label className="block text-gray-400 mb-2 font-medium">Add New Address</label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          name="currentAddress"
+                          value={formData.currentAddress}
+                          onChange={handleInputChange}
+                          placeholder="Enter your delivery address"
+                          className="flex-1 bg-gray-700 text-white px-4 py-3 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        />
+                        <button
+                          onClick={handleAddAddress}
+                          className="px-4 py-3 bg-gradient-to-r from-yellow-500 to-red-500 text-white rounded-r-lg hover:from-yellow-600 hover:to-red-600 transition-colors"
+                        >
+                          Add
+                        </button>
                       </div>
                     </div>
-                    
-                    <div className="text-right">
-                      <p className="text-sm text-gray-400">Total Orders</p>
-                      <p className="text-2xl font-bold text-white">{userData.orderCount}</p>
-                    </div>
-                  </div>
+                  )}
                   
-                  {orderHistory.length > 0 ? (
-                    <div className="space-y-4">
-                      {orderHistory.map((order) => (
-                        <div key={order.id} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-700/30 transition-colors">
-                          <div className="flex flex-col md:flex-row justify-between mb-4">
+                  {userData.addresses.length > 0 ? (
+                    <div className="space-y-3">
+                      {userData.addresses.map((address, index) => (
+                        <div key={index} className="flex justify-between items-center p-4 bg-gray-700/50 rounded-lg">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-400 mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </div>
                             <div>
-                              <div className="flex items-center space-x-2">
-                                <h4 className="text-white font-medium">Order #{order.id}</h4>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  order.status === 'Delivered' 
-                                    ? 'bg-green-500/20 text-green-400' 
-                                    : order.status === 'Processing'
-                                    ? 'bg-blue-500/20 text-blue-400'
-                                    : 'bg-yellow-500/20 text-yellow-400'
-                                }`}>
-                                  {order.status}
+                              <p className="text-white">{address}</p>
+                              {index === 0 && (
+                                <span className="text-xs px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full mt-1 inline-block">
+                                  Default
                                 </span>
-                              </div>
-                              <p className="text-sm text-gray-400">{formatDate(order.date)}</p>
-                            </div>
-                            <div className="mt-2 md:mt-0">
-                              <p className="text-sm text-gray-400">Total</p>
-                              <p className="text-white font-bold">${order.total.toFixed(2)}</p>
+                              )}
                             </div>
                           </div>
-                          
-                          <div className="space-y-2 mt-4 border-t border-gray-700 pt-4">
-                            {order.items.map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-sm">
-                                <div className="text-gray-300">
-                                  {item.quantity} × {item.name}
-                                </div>
-                                <div className="text-gray-400">
-                                  ${(item.price * item.quantity).toFixed(2)}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div className="flex justify-end mt-4 space-x-3">
+                          {isEditing && (
                             <button 
-                              className="text-sm px-3 py-1 border border-gray-600 text-gray-300 rounded hover:bg-gray-700"
-                              onClick={() => navigate(`/orders/${order.id}`)}
+                              onClick={() => handleRemoveAddress(index)}
+                              className="text-gray-400 hover:text-red-400 transition-colors"
                             >
-                              View Details
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
                             </button>
-                            <button 
-                              className="text-sm px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                              onClick={() => {
-                                // Here you would implement reorder functionality
-                                // This could add all items from this order back to cart
-                                console.log("Reordering items from order", order.id);
-                              }}
-                            >
-                              Reorder
-                            </button>
-                          </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-10">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <h3 className="text-xl font-medium text-white mb-2">No Orders Yet</h3>
-                      <p className="text-gray-400 mb-6">You haven't placed any orders yet.</p>
-                      <Link to="/menu" className="px-6 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors">
-                        Explore Menu
-                      </Link>
+                      <h3 className="text-lg font-medium text-white mb-2">No addresses yet</h3>
+                      <p className="text-gray-400 mb-5">You haven't added any delivery addresses.</p>
+                      {!isEditing && (
+                        <button 
+                          onClick={() => setIsEditing(true)}
+                          className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-medium rounded-lg transition-colors"
+                        >
+                          Add Address
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
-            
-                {/* Order Pagination - only show if there are many orders */}
-                {orderHistory.length > 5 && (
-                  <div className="flex justify-center mt-6">
-                    <nav className="flex items-center space-x-2">
-                      <button className="px-3 py-2 rounded-md bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white">
-                        <span className="sr-only">Previous</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                      <button className="px-3 py-1 rounded-md bg-yellow-500 text-white">1</button>
-                      <button className="px-3 py-1 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700">2</button>
-                      <button className="px-3 py-1 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700">3</button>
-                      <button className="px-3 py-2 rounded-md bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white">
-                        <span className="sr-only">Next</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </nav>
-                  </div>
-                )}
-            
-                {/* Order Filters - optional enhancement */}
-                {orderHistory.length > 0 && (
-                  <div className="p-4 bg-gray-800 rounded-lg">
-                    <h4 className="text-white font-medium mb-4">Filter Orders</h4>
-                    <div className="flex flex-wrap gap-3">
-                      <button className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
-                        All Orders
-                      </button>
-                      <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
-                        Recent (30 days)
-                      </button>
-                      <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
-                        Past Orders
-                      </button>
-                      <div className="flex-grow"></div>
-                      <select className="bg-gray-700 text-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                        <option value="all">All Statuses</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="canceled">Canceled</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
             
-                        {/* Settings Tab */}
-            {activeTab === 'settings' && (
-              <div className="space-y-6">
-                {/* Notification Preferences */}
-                <div className="p-4 bg-gray-800 rounded-lg">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                    <div className="flex space-x-4 items-center mb-4 md:mb-0">
-                      <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-white">Notification Preferences</h3>
-                        <p className="text-gray-400">Manage how we communicate with you</p>
-                      </div>
-                    </div>
-                  </div>
-            
+            {/* Preferences Tab */}
+            {(!isEditing && activeTab === 'preferences' || isEditing) && (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+                {/* Preferences content */}
+                <div className="px-6 py-4 border-b border-gray-700">
+                  <h3 className="text-lg font-semibold text-white">Preferences</h3>
+                </div>
+                <div className="p-6">
+                  {/* Preferences content */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 border border-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-white font-medium">Email Notifications</h4>
-                        <p className="text-sm text-gray-400">Receive updates about your orders and promotional offers</p>
+                        <p className="text-gray-400 text-sm">Receive notifications about orders and updates</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
-                      </label>
+                      {isEditing ? (
+                        <div 
+                          onClick={() => handlePreferenceToggle('notifications')} 
+                          className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                            formData.preferences.notifications ? 'bg-yellow-500' : 'bg-gray-600'
+                          }`}
+                        >
+                          <span 
+                            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform ${
+                              formData.preferences.notifications ? 'translate-x-6' : ''
+                            }`}
+                          />
+                        </div>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          userData.preferences.notifications 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {userData.preferences.notifications ? 'Enabled' : 'Disabled'}
+                        </span>
+                      )}
                     </div>
                     
-                    <div className="flex items-center justify-between p-3 border border-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-white font-medium">SMS Notifications</h4>
-                        <p className="text-sm text-gray-400">Receive text messages about your order status</p>
+                        <h4 className="text-white font-medium">Marketing Emails</h4>
+                        <p className="text-gray-400 text-sm">Receive promotional emails and special offers</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
-                      </label>
+                      {isEditing ? (
+                        <div 
+                          onClick={() => handlePreferenceToggle('marketingEmails')} 
+                          className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                            formData.preferences.marketingEmails ? 'bg-yellow-500' : 'bg-gray-600'
+                          }`}
+                        >
+                          <span 
+                            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform ${
+                              formData.preferences.marketingEmails ? 'translate-x-6' : ''
+                            }`}
+                          />
+                        </div>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          userData.preferences.marketingEmails 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {userData.preferences.marketingEmails ? 'Enabled' : 'Disabled'}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                </div>
-            
-                {/* Password Change */}
-                <div className="p-4 bg-gray-800 rounded-lg">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                    <div className="flex space-x-4 items-center mb-4 md:mb-0">
-                      <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      </div>
+                    
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-medium text-white">Password & Security</h3>
-                        <p className="text-gray-400">Update your password and secure your account</p>
+                        <h4 className="text-white font-medium">Two-Factor Authentication</h4>
+                        <p className="text-gray-400 text-sm">Add an extra layer of security to your account</p>
                       </div>
+                      {isEditing ? (
+                        <div 
+                          onClick={() => handlePreferenceToggle('twoFactorAuth')} 
+                          className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                            formData.preferences.twoFactorAuth ? 'bg-yellow-500' : 'bg-gray-600'
+                          }`}
+                        >
+                          <span 
+                            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform ${
+                              formData.preferences.twoFactorAuth ? 'translate-x-6' : ''
+                            }`}
+                          />
+                        </div>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          userData.preferences.twoFactorAuth 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {userData.preferences.twoFactorAuth ? 'Enabled' : 'Disabled'}
+                        </span>
+                      )}
                     </div>
                   </div>
-            
-                  <form className="space-y-4">
-                    <div className="space-y-2">
-                      <label htmlFor="current-password" className="block text-sm font-medium text-gray-300">
-                        Current Password
-                      </label>
-                      <input
-                        id="current-password"
-                        name="current-password"
-                        type="password"
-                        autoComplete="current-password"
-                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      />
-                    </div>
-            
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="new-password" className="block text-sm font-medium text-gray-300">
-                          New Password
-                        </label>
-                        <input
-                          id="new-password"
-                          name="new-password"
-                          type="password"
-                          autoComplete="new-password"
-                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                        />
-                      </div>
-            
-                      <div className="space-y-2">
-                        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300">
-                          Confirm New Password
-                        </label>
-                        <input
-                          id="confirm-password"
-                          name="confirm-password"
-                          type="password"
-                          autoComplete="new-password"
-                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-            
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
-                      >
-                        Update Password
-                      </button>
-                    </div>
-                  </form>
-                </div>
-            
-                {/* Payment Methods (placeholder for future implementation) */}
-                <div className="p-4 bg-gray-800 rounded-lg">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                    <div className="flex space-x-4 items-center mb-4 md:mb-0">
-                      <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-white">Payment Methods</h3>
-                        <p className="text-gray-400">Manage your payment options</p>
-                      </div>
-                    </div>
-                    <button 
-                      className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-                    >
-                      Add Payment Method
-                    </button>
-                  </div>
-            
-                  <div className="text-center py-8">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    <h3 className="text-xl font-medium text-white mb-2">No Payment Methods Added</h3>
-                    <p className="text-gray-400 mb-6">Add a payment method to speed up checkout.</p>
-                    <button className="px-6 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors">
-                      Add Credit Card
-                    </button>
-                  </div>
-                </div>
-            
-                {/* Danger Zone */}
-                <div className="p-4 bg-gray-800 rounded-lg border border-red-800">
-                  <h3 className="text-lg font-medium text-white mb-4">Danger Zone</h3>
                   
-                  <div className="p-4 bg-red-900/30 rounded-lg">
-                    <h4 className="text-white font-medium mb-2">Delete Account</h4>
-                    <p className="text-gray-300 text-sm mb-4">
-                      Once you delete your account, there is no going back. Please be certain.
-                    </p>
-                    <button 
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                      onClick={() => {
-                        // Show confirmation modal before proceeding
-                        const confirmed = window.confirm(
-                          "Are you sure you want to delete your account? This action cannot be undone."
-                        );
-                        if (confirmed) {
-                          console.log("Account deletion requested");
-                          // Implement account deletion logic here
-                        }
-                      }}
-                    >
-                      Delete Account
-                    </button>
+                  <div className="mt-8 pt-6 border-t border-gray-700">
+                    <h4 className="text-white font-medium mb-4">Spice Level Preference</h4>
+                    <div className="flex items-center justify-between">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <label key={level} className="flex flex-col items-center cursor-pointer group">
+                          <input
+                            type="radio"
+                            name="spiceLevel"
+                            value={level}
+                            className="sr-only"
+                            checked={parseInt(formData.spiceLevel) === level}
+                            onChange={() => isEditing && setFormData({...formData, spiceLevel: level.toString()})}
+                            disabled={!isEditing}
+                          />
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                            parseInt(formData.spiceLevel) === level 
+                              ? 'bg-gradient-to-br from-yellow-500 to-red-600 text-white transform scale-110' 
+                              : 'bg-gray-700 text-gray-400 group-hover:bg-gray-600'
+                          } ${!isEditing ? 'cursor-default' : 'cursor-pointer'}`}>
+                            {level}
+                          </div>
+                          <span className="mt-1 text-xs font-medium text-gray-400">
+                            {level === 1 && 'Mild'}
+                            {level === 2 && 'Medium'}
+                            {level === 3 && 'Spicy'}
+                            {level === 4 && 'Very Hot'}
+                            {level === 5 && 'Extreme'}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

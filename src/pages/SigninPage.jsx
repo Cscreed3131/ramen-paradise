@@ -15,15 +15,11 @@ export default function SigninPage() {
   const login = async (data) => {
     setError("");
     setIsLoading(true);
-
+    
     try {
       const userData = await authService.signin(data);
       if (userData) {
-        const user = await authService.getCurrentUserId();
-        if (user) {
-          console.info("SigninPage:: userdata:: ", user);
-          dispatch(signin(user));
-        }
+        dispatch(signin(userData));
         navigate("/home");
       }
     } catch (error) {

@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import authService from '../../firebase/AuthService';
+import { signout as authSignout} from '../../features/authSlice';
 
 export default function Header() {
+    const dispatch = useDispatch();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -66,8 +69,9 @@ export default function Header() {
         };
     }, [profileDropdownRef, cartDropdownRef]);
 
-    const handleLogout = () => {
-        setUser(null);
+    const handleLogout =async () => {
+        await authService.signout();
+        dispatch(authSignout());
         setIsProfileOpen(false);
         navigate('/home');
     };

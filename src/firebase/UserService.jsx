@@ -1,40 +1,58 @@
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import authService from './AuthService';
-export class UserService{
-    db;
 
-    constructor() {
-        this.db = db;
-    }
+class UserService {
+  constructor() {
+    this.db = db;
+    this.collection = 'users';
+  }
 
-    async createUserData({name, email, password}) {
-        try {
-            const userId = await authService.getCurrentUserId();
-            const docRef = doc(this.db, 'users', userId);
-            await setDoc(docRef, { name, email, password });
-            console.log('User data created successfully!');
-        } catch (error) {
-            console.error('Error creating user data:', error);
-            throw error;
-        }
+  async createUser(userData) {
+    try {
+      const userRef = doc(this.db, this.collection, userData.uid);
+      await setDoc(userRef, {
+        ...userData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return userData;
+    } catch (error) {
+      console.log("Error: UserService :: createUser :: ", error);
+      throw error;
     }
+  }
 
-    async getUserData(userId) {
-        try {
-            const docRef = doc(this.db, 'users', userId);
-            const userDoc = await getDoc(docRef);
-            if (userDoc.exists()) {
-                return { id: userDoc.id, ...userDoc.data() };
-            } else {
-                console.log('No such document!');
-                return null;
-            }
-        } catch (error) {
-            console.error('Error fetching user data:', error);
-            throw error;
-        }
+  async getUserData(uid) {
+    try {
+      const userRef = doc(this.db, this.collection, uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        return userSnap.data();
+      } else {
+        console.log("No user document found for this ID!");
+        return null;
+      }
+    } catch (error) {
+      console.log("Error: UserService :: getUserData :: ", error);
+      throw error;
     }
+  }
+
+  async updateUser(uid, userData) {
+    try {
+      const userRef = doc(this.db, this.collection, uid);
+      await updateDoc(userRef, {
+        ...userData,
+        updatedAt: new Date().toISOString()
+      });
+      return userData;
+    } catch (error) {
+      console.log("Error: UserService :: updateUser :: ", error);
+      throw error;
+    }
+  }
 }
 
-const userService = new UserService()
-export default userService
+const userService = new UserService();
+export default userService;
