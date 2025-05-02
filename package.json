@@ -13,6 +13,7 @@
     "@reduxjs/toolkit": "^2.7.0",
     "appwrite": "^17.0.2",
     "firebase": "^11.6.0",
+    "framer-motion": "^12.9.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.1",

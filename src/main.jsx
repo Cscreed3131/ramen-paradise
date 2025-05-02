@@ -30,6 +30,7 @@
   import SigninPage from './pages/SigninPage.jsx'
   import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
   import UserProfilePage from './pages/UserProfilePage.jsx'
+import OrderPage from './pages/OrderPage.jsx'
 
   const router = createBrowserRouter([
     // Main public routes
@@ -62,7 +63,12 @@
           element: <Offers />,
         },
         
+        
       ]
+    },
+    {
+      path: 'order',
+      element: <OrderPage />,
     },
     {
       path: 'user-profile',
