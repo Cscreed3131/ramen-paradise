@@ -2,155 +2,132 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchAllProducts, selectAllProducts } from  '../features/productSlice';
 
-// Expanded menu with additional items
-const RAMEN_MENU = [
-  {
-    id: 'tonkotsu',
-    name: 'Tonkotsu Ramen',
-    description: 'Rich pork bone broth with tender chashu pork, ajitama egg, and green onions',
-    price: 14.99,
-    image: '/images/tonkotsu.jpg',
-    category: 'signature',
-    spiceLevel: 1,
-    popular: true,
-    tags: ['creamy', 'umami', 'classic'],
-    ingredients: ['Pork bone broth', 'Chashu pork', 'Ajitama egg', 'Green onions', 'Nori', 'Bamboo shoots']
-  },
-  {
-    id: 'spicy-miso',
-    name: 'Spicy Miso Ramen',
-    description: 'Hearty miso broth with spicy chili oil, ground pork, corn, butter, and bean sprouts',
-    price: 15.99,
-    image: '/images/spicy-miso.jpg',
-    category: 'signature',
-    spiceLevel: 3,
-    popular: true,
-    tags: ['spicy', 'rich', 'comforting'],
-    ingredients: ['Miso broth', 'Spicy chili oil', 'Ground pork', 'Corn', 'Butter', 'Bean sprouts', 'Ajitama egg']
-  },
-  {
-    id: 'shoyu',
-    name: 'Shoyu Ramen',
-    description: 'Classic soy sauce based broth with chicken chashu, menma, and spinach',
-    price: 13.99,
-    image: '/images/shoyu.jpg',
-    category: 'classic',
-    spiceLevel: 1,
-    popular: false,
-    tags: ['light', 'balanced', 'traditional'],
-    ingredients: ['Soy sauce chicken broth', 'Chicken chashu', 'Menma', 'Spinach', 'Green onions', 'Naruto']
-  },
-  {
-    id: 'tantanmen',
-    name: 'Tantanmen',
-    description: 'Creamy sesame broth with spicy minced pork, bok choy, and chili oil',
-    price: 16.99,
-    image: '/images/tantanmen.jpg',
-    category: 'specialty',
-    spiceLevel: 4,
-    popular: false,
-    tags: ['spicy', 'nutty', 'rich'],
-    ingredients: ['Sesame broth', 'Spicy minced pork', 'Bok choy', 'Chili oil', 'Sesame paste', 'Green onions']
-  },
-  {
-    id: 'veggie',
-    name: 'Veggie Delight Ramen',
-    description: 'Vegetable broth with tofu, mushrooms, corn, and seasonal vegetables',
-    price: 13.99,
-    image: '/images/veggie.jpg',
-    category: 'vegetarian',
-    spiceLevel: 0,
-    popular: false,
-    tags: ['vegetarian', 'healthy', 'light'],
-    ingredients: ['Vegetable broth', 'Tofu', 'Shiitake mushrooms', 'Corn', 'Bamboo shoots', 'Yu choy']
-  },
-  {
-    id: 'tsukemen',
-    name: 'Tsukemen Dipping Noodles',
-    description: 'Cold noodles served with rich dipping broth, pork, and ajitama egg',
-    price: 16.99,
-    image: '/images/tsukemen.jpg',
-    category: 'specialty',
-    spiceLevel: 2,
-    popular: true,
-    tags: ['unique', 'concentrated', 'refreshing'],
-    ingredients: ['Concentrated dipping broth', 'Cold noodles', 'Chashu pork', 'Ajitama egg', 'Lime', 'Green onions']
-  },
-  // New menu items
-  {
-    id: 'tokyo-shoyu',
-    name: 'Tokyo-Style Shoyu Ramen',
-    description: 'Light and clear chicken-based broth with soy sauce, thin noodles and marinated bamboo shoots',
-    price: 15.49,
-    image: '/images/tokyo-shoyu.jpg',
-    category: 'classic',
-    spiceLevel: 0,
-    popular: true,
-    tags: ['traditional', 'light', 'aromatic'],
-    ingredients: ['Chicken-soy broth', 'Thin noodles', 'Chashu pork', 'Menma', 'Spinach', 'Naruto', 'Nori']
-  },
-  {
-    id: 'curry-ramen',
-    name: 'Japanese Curry Ramen',
-    description: 'Rich curry-infused broth with tender chicken, potatoes, carrots, and chewy noodles',
-    price: 16.49,
-    image: '/images/curry-ramen.jpg',
-    category: 'specialty',
-    spiceLevel: 2,
-    popular: false,
-    tags: ['curry', 'hearty', 'comforting'],
-    ingredients: ['Curry broth', 'Chicken', 'Potatoes', 'Carrots', 'Peas', 'Medium-thick noodles']
-  },
-  {
-    id: 'shrimp-wonton',
-    name: 'Shrimp Wonton Ramen',
-    description: 'Delicate seafood broth with handmade shrimp wontons, bok choy, and thin noodles',
-    price: 17.99,
-    image: '/images/shrimp-wonton.jpg',
-    category: 'signature',
-    spiceLevel: 0,
-    popular: false,
-    tags: ['seafood', 'light', 'delicate'],
-    ingredients: ['Seafood broth', 'Shrimp wontons', 'Bok choy', 'Green onions', 'Thin noodles']
-  },
-  {
-    id: 'black-garlic',
-    name: 'Black Garlic Tonkotsu',
-    description: 'Tonkotsu broth infused with black garlic oil, topped with chashu, kikurage mushrooms and garlic chips',
-    price: 16.99,
-    image: '/images/black-garlic.jpg',
-    category: 'signature',
-    spiceLevel: 1,
-    popular: true,
-    tags: ['rich', 'garlicky', 'complex'],
-    ingredients: ['Pork bone broth', 'Black garlic oil', 'Chashu pork', 'Kikurage mushrooms', 'Garlic chips', 'Ajitama egg']
-  },
-  {
-    id: 'spicy-vegan',
-    name: 'Spicy Vegan Miso',
-    description: 'Plant-based spicy miso broth with impossible meat, tofu, corn and bean sprouts',
-    price: 15.49,
-    image: '/images/spicy-vegan.jpg',
-    category: 'vegetarian',
-    spiceLevel: 3,
-    popular: false,
-    tags: ['vegan', 'spicy', 'plant-based'],
-    ingredients: ['Vegetable miso broth', 'Plant-based meat', 'Tofu', 'Corn', 'Bean sprouts', 'Chili oil']
-  },
-  {
-    id: 'chicken-paitan',
-    name: 'Chicken Paitan Ramen',
-    description: 'Creamy chicken broth with grilled chicken, yuzu kosho, and wavy noodles',
-    price: 15.99,
-    image: '/images/chicken-paitan.jpg',
-    category: 'signature',
-    spiceLevel: 0,
-    popular: false,
-    tags: ['creamy', 'chicken', 'refreshing'],
-    ingredients: ['Creamy chicken broth', 'Grilled chicken', 'Yuzu kosho', 'Menma', 'Green onions', 'Wavy noodles']
-  }
-];
+// const MENU_ITEMS = [
+//   {
+//     id: 'tonkotsu',
+//     name: 'Tonkotsu Ramen',
+//     description: 'Rich pork bone broth with tender chashu pork, ajitama egg, and green onions',
+//     price: 14.99,
+//     image: '/images/tonkotsu.jpg',
+//     category: 'ramen',
+//     featured: true,
+//     spiceLevel: 1,
+//     popular: true,
+//     dateAdded: '2025-01-15T12:30:00.000Z',
+//     inStock: true,
+//     tags: ['creamy', 'umami', 'classic'],
+//     ingredients: ['Pork bone broth', 'Chashu pork', 'Ajitama egg', 'Green onions', 'Nori', 'Bamboo shoots'],
+//     rating: 4.8,
+//     sales: 250
+//   },
+//   {
+//     id: 'spicy-miso',
+//     name: 'Spicy Miso Ramen',
+//     description: 'Hearty miso broth with spicy chili oil, ground pork, corn, butter, and bean sprouts',
+//     price: 15.99,
+//     image: '/images/spicy-miso.jpg',
+//     category: 'ramen',
+//     featured: true,
+//     spiceLevel: 3,
+//     popular: true,
+//     dateAdded: '2025-01-20T14:45:00.000Z',
+//     inStock: true,
+//     tags: ['spicy', 'rich', 'comforting'],
+//     ingredients: ['Miso broth', 'Spicy chili oil', 'Ground pork', 'Corn', 'Butter', 'Bean sprouts', 'Ajitama egg'],
+//     rating: 4.7,
+//     sales: 230
+//   },
+//   {
+//     id: 'shoyu',
+//     name: 'Shoyu Ramen',
+//     description: 'Classic soy sauce based broth with chicken chashu, menma, and spinach',
+//     price: 13.99,
+//     image: '/images/shoyu.jpg',
+//     category: 'ramen',
+//     featured: false,
+//     spiceLevel: 1,
+//     popular: false,
+//     dateAdded: '2025-01-10T09:20:00.000Z',
+//     inStock: true,
+//     tags: ['light', 'balanced', 'traditional'],
+//     ingredients: ['Soy sauce chicken broth', 'Chicken chashu', 'Menma', 'Spinach', 'Green onions', 'Naruto'],
+//     rating: 4.5,
+//     sales: 180
+//   },
+//   {
+//     id: 'tantanmen',
+//     name: 'Tantanmen',
+//     description: 'Creamy sesame broth with spicy minced pork, bok choy, and chili oil',
+//     price: 16.99,
+//     image: '/images/tantanmen.jpg',
+//     category: 'ramen',
+//     featured: false,
+//     spiceLevel: 4,
+//     popular: false,
+//     dateAdded: '2025-02-05T16:30:00.000Z',
+//     inStock: true,
+//     tags: ['spicy', 'nutty', 'rich'],
+//     ingredients: ['Sesame broth', 'Spicy minced pork', 'Bok choy', 'Chili oil', 'Sesame paste', 'Green onions'],
+//     rating: 4.6,
+//     sales: 150
+//   },
+//   {
+//     id: 'veggie',
+//     name: 'Veggie Delight Ramen',
+//     description: 'Vegetable broth with tofu, mushrooms, corn, and seasonal vegetables',
+//     price: 13.99,
+//     image: '/images/veggie.jpg',
+//     category: 'ramen',
+//     featured: false,
+//     spiceLevel: 0,
+//     popular: false,
+//     dateAdded: '2025-02-10T11:15:00.000Z',
+//     inStock: true,
+//     tags: ['vegetarian', 'healthy', 'light'],
+//     ingredients: ['Vegetable broth', 'Tofu', 'Shiitake mushrooms', 'Corn', 'Bamboo shoots', 'Yu choy'],
+//     rating: 4.4,
+//     sales: 120
+//   },
+//   {
+//     id: 'tsukemen',
+//     name: 'Tsukemen Dipping Noodles',
+//     description: 'Cold noodles served with rich dipping broth, pork, and ajitama egg',
+//     price: 16.99,
+//     image: '/images/tsukemen.jpg',
+//     category: 'specialty',
+//     featured: true,
+//     spiceLevel: 2,
+//     popular: true,
+//     dateAdded: '2025-03-01T10:00:00.000Z',
+//     inStock: true,
+//     tags: ['unique', 'concentrated', 'refreshing'],
+//     ingredients: ['Concentrated dipping broth', 'Cold noodles', 'Chashu pork', 'Ajitama egg', 'Lime', 'Green onions'],
+//     rating: 4.9,
+//     sales: 200
+//   },
+//   {
+//     id: 'maki-sushi',
+//     name: 'Maki Sushi',
+//     description: 'Maki rolls are the most recognizable form of sushi — vinegared rice and fillings (like cucumber, tuna, avocado, or crab) wrapped in a sheet of nori (seaweed) and sliced into bite-sized pieces. They can range from simple (one filling) to complex (specialty rolls).',
+//     price: 8,
+//     image: 'https://fra.cloud.appwrite.io/v1/storage/buckets/680cdea9001879fd10c6/files/680e87a9001763540dbf/view?project=680cdd90000983513641',
+//     category: 'sushi',
+//     featured: true,
+//     spiceLevel: 0,
+//     popular: true,
+//     dateAdded: '2025-04-27T19:38:17.373Z',
+//     inStock: true,
+//     ingredients: [],
+//     rating: 0,
+//     sales: 0,
+//     imageMeta: {
+//       bucketId: "680cdea9001879fd10c6",
+//       fileId: "680e87a9001763540dbf"
+//     }
+//   }
+// ];
 
 const TOPPINGS = [
   { id: 'extra-chashu', name: 'Extra Chashu', price: 3.50 },
@@ -161,30 +138,45 @@ const TOPPINGS = [
   { id: 'butter', name: 'Butter', price: 1.00 },
   { id: 'kimchi', name: 'Kimchi', price: 2.50 },
   { id: 'spicy', name: 'Extra Spicy', price: 0.50 },
+  { id: 'wasabi', name: 'Extra Wasabi', price: 0.50 },
+  { id: 'ginger', name: 'Extra Ginger', price: 0.75 },
+];
+
+// Define common categories for our menu
+const MENU_CATEGORIES = [
+  { id: 'all', name: 'All Items' },
+  { id: 'ramen', name: 'Ramen' },
+  { id: 'specialty', name: 'Specialty' },
+  { id: 'sushi', name: 'Sushi' },
+  { id: 'vegetarian', name: 'Vegetarian' }
 ];
 
 export default function OrderPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
-  const user = auth.user;
-  
+  const user = auth.userData;
+  const productList = useSelector(selectAllProducts);
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cartItems, setCartItems] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [spiceLevelFilter, setSpiceLevelFilter] = useState(null);
   
-  // New state for expanded (customizable) menu item
   const [expandedItemId, setExpandedItemId] = useState(null);
   const [selectedToppings, setSelectedToppings] = useState([]);
   const [customizationQuantity, setCustomizationQuantity] = useState(1);
-  
-  // Filter menu items based on category, search query, and spice level
-  const filteredMenu = RAMEN_MENU.filter(item => {
+
+  useEffect(() => {
+    dispatch(fetchAllProducts())
+  },[dispatch]);
+
+  const filteredMenu = productList.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+                        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     const matchesSpiceLevel = spiceLevelFilter === null || item.spiceLevel === spiceLevelFilter;
     
     return matchesCategory && matchesSearch && matchesSpiceLevel;
@@ -303,13 +295,11 @@ export default function OrderPage() {
     setCustomizationQuantity(1);
   };
 
-  // Custom scrollbar style for the component
   const hideScrollbarStyle = {
     scrollbarWidth: 'none', // Firefox
     msOverflowStyle: 'none', // IE 10+
   };
 
-  // Style for WebKit browsers (Chrome, Safari, newer versions of Opera)
   const webkitScrollbarStyle = `
     .hide-scrollbar::-webkit-scrollbar {
       display: none;
@@ -333,7 +323,7 @@ export default function OrderPage() {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-white">Order Online</h1>
-                <p className="text-gray-400">Order delicious ramen for pickup or delivery</p>
+                <p className="text-gray-400">Order delicious food for pickup or delivery</p>
               </div>
               
               <div className="flex items-center space-x-4">
@@ -363,7 +353,7 @@ export default function OrderPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search for ramen..."
+                  placeholder="Search our menu..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-700 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
@@ -386,56 +376,19 @@ export default function OrderPage() {
             
             {/* Category Tabs */}
             <div className="flex overflow-x-auto hide-scrollbar py-3 -mx-4 px-4 mt-3 space-x-2" style={hideScrollbarStyle}>
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === 'all' 
-                    ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setSelectedCategory('signature')}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === 'signature' 
-                    ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Signature
-              </button>
-              <button
-                onClick={() => setSelectedCategory('classic')}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === 'classic' 
-                    ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Classic
-              </button>
-              <button
-                onClick={() => setSelectedCategory('specialty')}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === 'specialty' 
-                    ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Specialty
-              </button>
-              <button
-                onClick={() => setSelectedCategory('vegetarian')}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === 'vegetarian' 
-                    ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Vegetarian
-              </button>
+              {MENU_CATEGORIES.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === category.id 
+                      ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
             </div>
           </div>
           
@@ -450,13 +403,14 @@ export default function OrderPage() {
                       <div 
                         className={`bg-gray-800 border border-gray-700 rounded-lg overflow-hidden transition-all
                           ${expandedItemId === menuItem.id ? 'md:col-span-2 ring-2 ring-yellow-500' : ''}
+                          ${menuItem.featured ? 'ring-1 ring-yellow-500/30' : ''}
                         `}
                       >
                         {/* Basic Item Info */}
                         <div className="flex">
                           <div className="w-1/3 aspect-square overflow-hidden flex-shrink-0">
                             <img
-                              src={menuItem.image || `https://source.unsplash.com/600x400/?ramen,noodles,${menuItem.name.toLowerCase()}`}
+                              src={menuItem.image || `https://source.unsplash.com/600x400/?food,${menuItem.name.toLowerCase()}`}
                               alt={menuItem.name}
                               className="w-full h-full object-cover"
                               loading="lazy"
@@ -468,9 +422,9 @@ export default function OrderPage() {
                               <div>
                                 <div className="flex items-center">
                                   <h3 className="text-lg font-bold text-white">{menuItem.name}</h3>
-                                  {menuItem.popular && (
+                                  {menuItem.featured && (
                                     <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-900/40 text-yellow-500 rounded-full">
-                                      Popular ⭐
+                                      Featured ⭐
                                     </span>
                                   )}
                                 </div>
@@ -495,11 +449,23 @@ export default function OrderPage() {
                                 </span>
                               )}
                               
-                              {menuItem.tags.slice(0, 2).map((tag) => (
+                              {menuItem.category && (
+                                <span className="px-2 py-1 text-xs bg-gray-700/80 rounded-full text-gray-300">
+                                  {menuItem.category}
+                                </span>
+                              )}
+                              
+                              {menuItem.tags && menuItem.tags.slice(0, 1).map((tag) => (
                                 <span key={tag} className="px-2 py-1 text-xs bg-gray-700 rounded-full text-gray-300">
                                   {tag}
                                 </span>
                               ))}
+                              
+                              {menuItem.rating > 0 && (
+                                <span className="px-2 py-1 text-xs bg-blue-900/40 text-blue-400 rounded-full flex items-center">
+                                  <span className="mr-1">★</span>{menuItem.rating.toFixed(1)}
+                                </span>
+                              )}
                             </div>
                             
                             <div className="flex justify-between mt-4">
@@ -517,9 +483,14 @@ export default function OrderPage() {
                               {expandedItemId !== menuItem.id && (
                                 <button
                                   onClick={() => addToCart(menuItem)}
-                                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white rounded-md transition-colors"
+                                  disabled={!menuItem.inStock}
+                                  className={`px-4 py-2 ${
+                                    menuItem.inStock 
+                                      ? 'bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600'
+                                      : 'bg-gray-600 cursor-not-allowed'
+                                  } text-white rounded-md transition-colors`}
                                 >
-                                  Add to Cart
+                                  {menuItem.inStock ? 'Add to Cart' : 'Out of Stock'}
                                 </button>
                               )}
                             </div>
@@ -537,22 +508,32 @@ export default function OrderPage() {
                           >
                             <div className="p-4">
                               {/* Ingredients Section */}
-                              <div className="mb-6">
-                                <h3 className="text-md font-medium text-white mb-2">Ingredients</h3>
-                                <div className="flex flex-wrap gap-2">
-                                  {menuItem.ingredients.map((ingredient, index) => (
-                                    <span key={index} className="px-2 py-1 bg-gray-700 text-gray-300 text-sm rounded-md">
-                                      {ingredient}
-                                    </span>
-                                  ))}
+                              {menuItem.ingredients && menuItem.ingredients.length > 0 && (
+                                <div className="mb-6">
+                                  <h3 className="text-md font-medium text-white mb-2">Ingredients</h3>
+                                  <div className="flex flex-wrap gap-2">
+                                    {menuItem.ingredients.map((ingredient, index) => (
+                                      <span key={index} className="px-2 py-1 bg-gray-700 text-gray-300 text-sm rounded-md">
+                                        {ingredient}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                               
-                              {/* Toppings Section */}
+                              {/* Toppings Section - Show appropriate toppings based on category */}
                               <div className="mb-6">
-                                <h3 className="text-md font-medium text-white mb-2">Add Toppings</h3>
+                                <h3 className="text-md font-medium text-white mb-2">Add Extras</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                  {TOPPINGS.map((topping) => (
+                                  {TOPPINGS
+                                    .filter(topping => 
+                                      // For sushi category, only show wasabi and ginger
+                                      menuItem.category === 'sushi' ? 
+                                        ['wasabi', 'ginger'].includes(topping.id) : 
+                                        // Don't show wasabi and ginger for other categories
+                                        !['wasabi', 'ginger'].includes(topping.id)
+                                    )
+                                    .map((topping) => (
                                     <div 
                                       key={topping.id}
                                       onClick={() => handleToppingToggle(topping)}
@@ -604,9 +585,14 @@ export default function OrderPage() {
                                   </p>
                                   <button
                                     onClick={() => handleAddCustomizedItem(menuItem)}
-                                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white rounded-md transition-colors"
+                                    disabled={!menuItem.inStock}
+                                    className={`px-4 py-2 ${
+                                      menuItem.inStock 
+                                        ? 'bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600'
+                                        : 'bg-gray-600 cursor-not-allowed'
+                                    } text-white rounded-md transition-colors`}
                                   >
-                                    Add to Cart
+                                    {menuItem.inStock ? 'Add to Cart' : 'Out of Stock'}
                                   </button>
                                 </div>
                               </div>
@@ -664,7 +650,7 @@ export default function OrderPage() {
                     <div key={`${item.id}-${index}`} className="bg-gray-700 rounded-lg p-3 flex gap-3 relative">
                       <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
                         <img
-                          src={item.image || `https://source.unsplash.com/100x100/?ramen,noodles,${item.name.toLowerCase()}`}
+                          src={item.image || `https://source.unsplash.com/100x100/?food,${item.name.toLowerCase()}`}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -718,7 +704,7 @@ export default function OrderPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
                   <h3 className="text-lg font-medium text-gray-300 mb-2">Your cart is empty</h3>
-                  <p className="text-gray-400 text-sm">Add some delicious ramen to your order!</p>
+                  <p className="text-gray-400 text-sm">Add some delicious items to your order!</p>
                 </div>
               )}
             </div>
@@ -793,7 +779,7 @@ export default function OrderPage() {
                       <div key={`${item.id}-${index}`} className="bg-gray-700 rounded-lg p-3 flex gap-3 relative">
                         <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
                           <img
-                            src={item.image || `https://source.unsplash.com/100x100/?ramen,noodles,${item.name.toLowerCase()}`}
+                            src={item.image || `https://source.unsplash.com/100x100/?food,${item.name.toLowerCase()}`}
                             alt={item.name}
                             className="w-full h-full object-cover"
                           />
@@ -847,7 +833,7 @@ export default function OrderPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                     <h3 className="text-lg font-medium text-gray-300 mb-2">Your cart is empty</h3>
-                    <p className="text-gray-400 text-sm mb-6">Add some delicious ramen to your order!</p>
+                    <p className="text-gray-400 text-sm mb-6">Add some delicious items to your order!</p>
                     <button
                       onClick={() => setShowCart(false)}
                       className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
