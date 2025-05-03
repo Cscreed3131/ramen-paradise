@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import productsService from '../../../../firebase/ProductsService';
+import categoryService from '../../../../firebase/CategoryService'; // Import CategoryService
 
 function AddProduct() {
   const [image, setImage] = useState(null);
@@ -9,6 +10,9 @@ function AddProduct() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [uploadedFileId, setUploadedFileId] = useState(null);
+  
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   
   const fileInputRef = useRef(null);
   
@@ -20,8 +24,25 @@ function AddProduct() {
     formState: { errors } 
   } = useForm();
 
-  // Watch form values for preview
   const formValues = watch();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categoriesData = await categoryService.getAllCategories();
+        const activeCategories = categoriesData.filter(category => category.active);
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        setUploadError('Failed to load categories. Please try again.');
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
 
   const handleImageChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -30,7 +51,7 @@ function AddProduct() {
       
       const previewUrl = URL.createObjectURL(selectedFile);
       setImagePreview(previewUrl);
-      setUploadError(null); // Clear any previous errors
+      setUploadError(null); 
     }
   };
 
@@ -53,22 +74,19 @@ function AddProduct() {
     setUploadError(null);
     
     try {
-      // Create new product object
       const newProduct = {
         name: data.productName,
         price: data.productPrice,
         description: data.productDescription,
-        image: image, // Pass the actual file object to the service
+        image: image, 
         category: data.category,
         featured: data.featured === 'true',
         inStock: true,
         dateAdded: new Date().toISOString()
       };
 
-      // Use productsService to handle all the image upload and product creation
       const result = await productsService.addProduct(newProduct);
       
-      // If successful, set the uploaded file ID for display
       if (result && result.imageId) {
         setUploadedFileId(result.imageId);
       }
@@ -76,7 +94,6 @@ function AddProduct() {
       console.log('Product added successfully with ID:', result.productId);
       setSubmitSuccess(true);
       
-      // Reset form after successful submission
       setTimeout(() => {
         reset();
         resetImage();
@@ -176,16 +193,35 @@ function AddProduct() {
                 <label className="block text-gray-400 mb-2 font-medium">Category</label>
                 <select 
                   id="category"
-                  className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className={`w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 ${errors.category ? 'border border-red-500' : ''}`}
                   {...register("category", { required: true })}
+                  disabled={categoriesLoading}
                 >
                   <option value="">Select a category</option>
-                  <option value="ramen">Ramen</option>
-                  <option value="sushi">Sushi</option>
-                  <option value="appetizers">Appetizers</option>
-                  <option value="desserts">Desserts</option>
-                  <option value="drinks">Drinks</option>
+                  
+                  {categoriesLoading ? (
+                    <option value="" disabled>Loading categories...</option>
+                  ) : categories.length > 0 ? (
+                    categories.map(category => (
+                      <option key={category.id} value={category.name.toLowerCase()}>
+                        {category.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No categories available</option>
+                  )}
                 </select>
+                
+                {categoriesLoading && (
+                  <div className="mt-1 flex items-center">
+                    <svg className="animate-spin h-4 w-4 text-yellow-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-sm text-gray-400">Loading available categories...</span>
+                  </div>
+                )}
+                
                 {errors.category && (
                   <span className="text-red-500 text-sm mt-1">Please select a category</span>
                 )}

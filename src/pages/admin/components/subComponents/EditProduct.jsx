@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import productsService from '../../../../firebase/ProductsService';
+import categoryService from '../../../../firebase/CategoryService'; 
 
 function EditProduct() {
   const [products, setProducts] = useState([]);
@@ -11,6 +12,9 @@ function EditProduct() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  
   const { 
     register, 
     handleSubmit, 
@@ -19,12 +23,20 @@ function EditProduct() {
     formState: { errors } 
   } = useForm();
   
-  // Load products on component mount
+  const scrollbarHideStyles = `
+    .hide-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;     /* Firefox */
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;             /* Chrome, Safari and Opera */
+    }
+  `;
+  
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Assuming you have a method to get all products
         const productsData = await productsService.getAllProducts();
         setProducts(productsData);
       } catch (error) {
@@ -37,19 +49,33 @@ function EditProduct() {
     fetchProducts();
   }, []);
   
-  // Filter products based on search term
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categoriesData = await categoryService.getAllCategories();
+        const activeCategories = categoriesData.filter(category => category.active);
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Handle product selection for editing
   const handleSelectProduct = (product) => {
     setSelectedProduct(product);
     setImagePreview(product.image);
     
-    // Populate form with product data
     setValue('productName', product.name);
     setValue('productPrice', product.price);
     setValue('productDescription', product.description);
@@ -71,9 +97,7 @@ function EditProduct() {
   
   const updateProduct = async (data) => {
     if (!selectedProduct) return;
-    
     setIsSubmitting(true);
-    
     const updatedProduct = {
       ...selectedProduct,
       name: data.productName,
@@ -88,15 +112,10 @@ function EditProduct() {
     
     try {
       await productsService.updateProduct(selectedProduct.id, updatedProduct);
-      
-      // Update the products list with the updated product
       setProducts(products.map(p => 
         p.id === selectedProduct.id ? updatedProduct : p
       ));
-      
       setSubmitSuccess(true);
-      
-      // Reset success message after 3 seconds
       setTimeout(() => {
         setSubmitSuccess(false);
       }, 3000);
@@ -109,6 +128,9 @@ function EditProduct() {
 
   return (
     <div className='flex flex-col space-y-6 max-w-6xl mx-auto'>
+      {/* Add the scrollbar hiding styles */}
+      <style>{scrollbarHideStyles}</style>
+      
       {/* Header */}
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
         <div className="p-6">
@@ -156,13 +178,13 @@ function EditProduct() {
       {/* Main content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Product list */}
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg overflow-hidden h-[550px] flex flex-col">
           <div className="px-6 py-4 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">Select a Product</h3>
           </div>
           
           {isLoading ? (
-            <div className="p-6 flex justify-center">
+            <div className="p-6 flex justify-center flex-grow">
               <div className="flex items-center space-x-2">
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -174,7 +196,7 @@ function EditProduct() {
           ) : (
             <>
               {filteredProducts.length > 0 ? (
-                <div className="divide-y divide-gray-700 max-h-96 overflow-y-auto">
+                <div className="divide-y divide-gray-700 overflow-y-auto hide-scrollbar flex-grow">
                   {filteredProducts.map(product => (
                     <div 
                       key={product.id}
@@ -216,7 +238,7 @@ function EditProduct() {
                   ))}
                 </div>
               ) : (
-                <div className="p-6 text-center">
+                <div className="p-6 text-center flex-grow flex flex-col justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
@@ -228,7 +250,7 @@ function EditProduct() {
           )}
           
           {filteredProducts.length > 0 && (
-            <div className="px-6 py-4 bg-gray-800/20 border-t border-gray-700">
+            <div className="px-6 py-4 bg-gray-800/20 border-t border-gray-700 mt-auto">
               <p className="text-sm text-gray-400">
                 {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
                 {searchTerm ? ` matching "${searchTerm}"` : ''}
@@ -288,14 +310,33 @@ function EditProduct() {
                         id="category"
                         className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                         {...register("category", { required: true })}
+                        disabled={categoriesLoading}
                       >
                         <option value="">Select a category</option>
-                        <option value="ramen">Ramen</option>
-                        <option value="sushi">Sushi</option>
-                        <option value="appetizers">Appetizers</option>
-                        <option value="desserts">Desserts</option>
-                        <option value="drinks">Drinks</option>
+                        
+                        {categoriesLoading ? (
+                          <option value="" disabled>Loading categories...</option>
+                        ) : categories.length > 0 ? (
+                          categories.map(category => (
+                            <option key={category.id} value={category.name.toLowerCase()}>
+                              {category.name}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="" disabled>No categories available</option>
+                        )}
                       </select>
+                      
+                      {categoriesLoading && (
+                        <div className="mt-1 flex items-center">
+                          <svg className="animate-spin h-4 w-4 text-yellow-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm text-gray-400">Loading available categories...</span>
+                        </div>
+                      )}
+                      
                       {errors.category && (
                         <span className="text-red-500 text-sm mt-1">Please select a category</span>
                       )}
@@ -358,7 +399,7 @@ function EditProduct() {
                       id="productDescription"
                       rows="4"
                       placeholder="Describe your product..." 
-                      className={`w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 ${errors.productDescription ? 'border border-red-500' : ''}`}
+                      className={`w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 ${errors.productDescription ? 'border border-red-500' : ''} hide-scrollbar`}
                       {...register("productDescription", { required: true, minLength: 10 })}
                     ></textarea>
                     {errors.productDescription && (

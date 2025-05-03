@@ -1,151 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import productsService from '../../../../firebase/ProductsService';
+import categoryService from '../../../../firebase/CategoryService'; // Import CategoryService
 
-
-// const [products, setProducts] = useState([
-//   {
-//     id: 1,
-//     name: "Tonkotsu Ramen",
-//     image: "https://images.unsplash.com/photo-1614563637806-1d0e645e0940?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 14.99,
-//     category: "ramen",
-//     description: "Rich pork bone broth with chashu, soft-boiled egg, green onions, and nori.",
-//     inStock: true,
-//     featured: true,
-//     rating: 4.8,
-//     sales: 342,
-//     dateAdded: "2024-10-15T09:30:00",
-//     ingredients: ["Pork bone broth", "Ramen noodles", "Chashu pork", "Soft-boiled egg", "Green onions", "Nori"]
-//   },
-//   {
-//     id: 2,
-//     name: "Spicy Miso Ramen",
-//     image: "https://images.unsplash.com/photo-1591814468924-caf88d1232e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 15.99,
-//     category: "ramen",
-//     description: "Spicy miso broth with ground pork, corn, bean sprouts, and butter.",
-//     inStock: true,
-//     featured: true,
-//     rating: 4.7,
-//     sales: 287,
-//     dateAdded: "2024-10-16T10:45:00",
-//     ingredients: ["Miso broth", "Ramen noodles", "Ground pork", "Corn", "Bean sprouts", "Butter", "Chili oil"]
-//   },
-//   {
-//     id: 3,
-//     name: "Shoyu Ramen",
-//     image: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 13.99,
-//     category: "ramen",
-//     description: "Soy sauce-based broth with chicken, bamboo shoots, and marinated egg.",
-//     inStock: true,
-//     featured: false,
-//     rating: 4.5,
-//     sales: 204,
-//     dateAdded: "2024-10-18T14:20:00",
-//     ingredients: ["Soy sauce broth", "Ramen noodles", "Chicken", "Bamboo shoots", "Marinated egg", "Green onions"]
-//   },
-//   {
-//     id: 4,
-//     name: "Dragon Roll",
-//     image: "https://images.unsplash.com/photo-1617196034288-de201c5939cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 16.99,
-//     category: "sushi",
-//     description: "Shrimp tempura roll topped with avocado, eel, and special sauce.",
-//     inStock: true,
-//     featured: true,
-//     rating: 4.6,
-//     sales: 253,
-//     dateAdded: "2024-10-20T11:15:00",
-//     ingredients: ["Sushi rice", "Nori", "Shrimp tempura", "Avocado", "Eel", "Special sauce"]
-//   },
-//   {
-//     id: 5,
-//     name: "California Roll",
-//     image: "https://images.unsplash.com/photo-1559410545-0bdcd187e323?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 12.99,
-//     category: "sushi",
-//     description: "Crab, avocado, and cucumber roll with tobiko on the outside.",
-//     inStock: true,
-//     featured: false,
-//     rating: 4.3,
-//     sales: 186,
-//     dateAdded: "2024-10-21T16:30:00",
-//     ingredients: ["Sushi rice", "Nori", "Imitation crab", "Avocado", "Cucumber", "Tobiko"]
-//   },
-//   {
-//     id: 6,
-//     name: "Gyoza",
-//     image: "https://images.unsplash.com/photo-1626845357008-01fe606c2cf6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 8.99,
-//     category: "appetizers",
-//     description: "Pan-fried dumplings filled with pork and vegetables.",
-//     inStock: true,
-//     featured: true,
-//     rating: 4.5,
-//     sales: 241,
-//     dateAdded: "2024-10-22T12:10:00",
-//     ingredients: ["Dumpling wrappers", "Ground pork", "Cabbage", "Green onions", "Garlic", "Ginger"]
-//   },
-//   {
-//     id: 7,
-//     name: "Tempura",
-//     image: "https://images.unsplash.com/photo-1579688690278-d36e36fb3f0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 12.99,
-//     category: "appetizers",
-//     description: "Lightly battered and fried shrimp and vegetables.",
-//     inStock: true,
-//     featured: false,
-//     rating: 4.4,
-//     sales: 178,
-//     dateAdded: "2024-10-23T15:40:00",
-//     ingredients: ["Shrimp", "Assorted vegetables", "Tempura batter", "Tempura dipping sauce"]
-//   },
-//   {
-//     id: 8,
-//     name: "Matcha Green Tea",
-//     image: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 4.99,
-//     category: "drinks",
-//     description: "Traditional Japanese powdered green tea.",
-//     inStock: true,
-//     featured: true,
-//     rating: 4.4,
-//     sales: 224,
-//     dateAdded: "2024-10-24T09:20:00",
-//     ingredients: ["Matcha green tea powder", "Hot water"]
-//   },
-//   {
-//     id: 9,
-//     name: "Mochi Ice Cream",
-//     image: "https://images.unsplash.com/photo-1628293356502-861c936da2d1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 6.99,
-//     category: "desserts",
-//     description: "Sweet rice cake filled with ice cream in various flavors.",
-//     inStock: false,
-//     featured: false,
-//     rating: 4.7,
-//     sales: 198,
-//     dateAdded: "2024-10-25T13:50:00",
-//     ingredients: ["Glutinous rice flour", "Sugar", "Ice cream", "Cornstarch"]
-//   },
-//   {
-//     id: 10,
-//     name: "Sake",
-//     image: "https://images.unsplash.com/photo-1531131141766-e1dc10e8facc?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-//     price: 10.50,
-//     category: "drinks",
-//     description: "Traditional Japanese rice wine served warm or cold.",
-//     inStock: true,
-//     featured: false,
-//     rating: 4.2,
-//     sales: 156,
-//     dateAdded: "2024-10-26T17:15:00",
-//     ingredients: ["Rice", "Water", "Koji"]
-//   }
-// ]);
 function ProductList() {
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -157,12 +18,28 @@ function ProductList() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Fetch products from backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categoriesData = await categoryService.getAllCategories();
+        // Filter to only include active categories
+        const activeCategories = categoriesData.filter(category => category.active);
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Get products from Firebase via ProductsService
         const data = await productsService.getAllProducts();
         setProducts(data);
         setError(null);
@@ -177,23 +54,18 @@ function ProductList() {
     fetchProducts();
   }, []);
 
-  // Filter and sort products
   const filteredProducts = products.filter(product => {
-    // Apply search filter
     const searchMatch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Apply category filter
     const categoryMatch = categoryFilter === 'all' || product.category === categoryFilter;
     
-    // Apply stock filter
     const stockMatch = stockFilter === 'all' || 
                       (stockFilter === 'inStock' && product.inStock) || 
                       (stockFilter === 'outOfStock' && !product.inStock);
     
     return searchMatch && categoryMatch && stockMatch;
   }).sort((a, b) => {
-    // Apply sorting
     let comparison = 0;
     
     if (sortBy === 'name') {
@@ -211,30 +83,24 @@ function ProductList() {
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
-  // Format currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   };
 
-  // Format date
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // View product details
   const viewProductDetails = (product) => {
     setSelectedProduct(product);
   };
 
-  // Toggle product featured status
   const toggleFeatured = async (productId) => {
     try {
-      // Find the product
       const product = products.find(p => p.id === productId);
       if (!product) return;
 
-      // Optimistic UI update
       setProducts(products.map(product => 
         product.id === productId ? { ...product, featured: !product.featured } : product
       ));
@@ -243,11 +109,9 @@ function ProductList() {
         setSelectedProduct({ ...selectedProduct, featured: !selectedProduct.featured });
       }
 
-      // Update in backend
       await productsService.updateProduct(productId, { featured: !product.featured });
     } catch (err) {
       console.error('Error toggling featured status:', err);
-      // Revert the UI changes in case of error
       const originalProducts = await productsService.getAllProducts();
       setProducts(originalProducts);
       if (selectedProduct) {
@@ -259,14 +123,11 @@ function ProductList() {
     }
   };
 
-  // Toggle product stock status
   const toggleStock = async (productId) => {
     try {
-      // Find the product
       const product = products.find(p => p.id === productId);
       if (!product) return;
 
-      // Optimistic UI update
       setProducts(products.map(product => 
         product.id === productId ? { ...product, inStock: !product.inStock } : product
       ));
@@ -275,11 +136,9 @@ function ProductList() {
         setSelectedProduct({ ...selectedProduct, inStock: !selectedProduct.inStock });
       }
 
-      // Update in backend
       await productsService.updateProduct(productId, { inStock: !product.inStock });
     } catch (err) {
       console.error('Error toggling stock status:', err);
-      // Revert the UI changes in case of error
       const originalProducts = await productsService.getAllProducts();
       setProducts(originalProducts);
       if (selectedProduct) {
@@ -291,37 +150,30 @@ function ProductList() {
     }
   };
 
-  // Delete product
   const deleteProduct = async (productId) => {
     try {
-      // Optimistic UI update
       setProducts(products.filter(product => product.id !== productId));
       
       if (selectedProduct && selectedProduct.id === productId) {
         setSelectedProduct(null);
       }
 
-      // Delete from backend
       await productsService.deleteProduct(productId);
     } catch (err) {
       console.error('Error deleting product:', err);
-      // Revert the UI changes in case of error
       const originalProducts = await productsService.getAllProducts();
       setProducts(originalProducts);
     }
   };
 
-  // Navigate to edit product page
   const navigateToEdit = (productId) => {
     navigate(`/admin/products/edit/${productId}`);
   };
 
-  // Navigate to add product page
   const navigateToAddProduct = () => {
     navigate('/admin/products/add-product');
   };
 
-  // Calculate product statistics
   const productStats = {
     total: products.length,
     inStock: products.filter(p => p.inStock).length,
@@ -457,14 +309,32 @@ function ProductList() {
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  disabled={categoriesLoading}
                 >
                   <option value="all">All Categories</option>
-                  <option value="ramen">Ramen</option>
-                  <option value="sushi">Sushi</option>
-                  <option value="appetizers">Appetizers</option>
-                  <option value="desserts">Desserts</option>
-                  <option value="drinks">Drinks</option>
+                  
+                  {categoriesLoading ? (
+                    <option value="" disabled>Loading categories...</option>
+                  ) : categories.length > 0 ? (
+                    categories.map(category => (
+                      <option key={category.id} value={category.name.toLowerCase()}>
+                        {category.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No categories available</option>
+                  )}
                 </select>
+                
+                {categoriesLoading && (
+                  <div className="mt-1 flex items-center">
+                    <svg className="animate-spin h-3 w-3 text-yellow-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-xs text-gray-400">Loading categories...</span>
+                  </div>
+                )}
               </div>
               
               <div>
