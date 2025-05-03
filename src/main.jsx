@@ -31,6 +31,7 @@
   import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
   import UserProfilePage from './pages/UserProfilePage.jsx'
 import OrderPage from './pages/OrderPage.jsx'
+import CategoryManagement from './pages/admin/components/subComponents/CategoryManagement.jsx'
 
   const router = createBrowserRouter([
     // Main public routes
@@ -135,6 +136,10 @@ import OrderPage from './pages/OrderPage.jsx'
             {
               path: 'products/best-sellers',
               element: <ProductList />
+            },
+            {
+              path: 'products/categories',
+              element: <CategoryManagement />
             },
             
             // Other main admin routes
