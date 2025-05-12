@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import orderService from '../firebase/OrderService';
+
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();

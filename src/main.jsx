@@ -34,6 +34,7 @@
   import OrderPage from './pages/OrderPage.jsx'
   import CategoryManagement from './pages/admin/components/subComponents/CategoryManagement.jsx'
 import CheckoutPage from './pages/CheckoutPage.jsx'
+import PreviousOrdersPage from './pages/PreviousOrdersPage.jsx'
 
   const router = createBrowserRouter([
     {
@@ -77,6 +78,10 @@ import CheckoutPage from './pages/CheckoutPage.jsx'
     {
       path: 'user-profile',
       element: <UserProfilePage />,
+    },
+    {
+      path: 'your-orders',
+      element: <PreviousOrdersPage />,
     },
     {
       path: '/auth',
