@@ -24,7 +24,8 @@
     Settings, 
     Orders,
     Customers,
-    Restaurants} from './pages/admin/components/adminComponents.jsx'
+    Restaurants,
+    BestSeller} from './pages/admin/components/adminComponents.jsx'
   import Offers from './components/Offers/Offers.jsx'
   import SignupPage from './pages/SignupPage.jsx'
   import SigninPage from './pages/SigninPage.jsx'
@@ -135,7 +136,7 @@ import CategoryManagement from './pages/admin/components/subComponents/CategoryM
             },
             {
               path: 'products/best-sellers',
-              element: <ProductList />
+              element: <BestSeller />
             },
             {
               path: 'products/categories',

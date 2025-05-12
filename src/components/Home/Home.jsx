@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 function Home() {
     const navigate = useNavigate();
 
-    // Sample customer reviews
     const reviews = [
         {
             id: 1,
@@ -37,7 +36,7 @@ function Home() {
         {
             id: 1,
             name: "Tonkotsu Ramen",
-            image: "https://i.pinimg.com/originals/5e/71/f5/5e71f5ea8e767fbf4352fa2c82c7345f.jpg",
+            image: "https://i.pinimg.com/5e71f5ea8e767fbf4352fa2c82c7345f.jpg",
             price: 14.99,
             description: "Rich pork bone broth simmered for 12 hours with chashu pork, soft-boiled egg, green onions, and nori.",
             tag: "Bestseller"
@@ -186,14 +185,14 @@ function Home() {
                             <div className="space-y-4">
                                 <div className="rounded-2xl overflow-hidden h-48 shadow-lg border border-gray-700">
                                     <img 
-                                        src="https://i.pinimg.com/originals/b6/82/17/b68217a369d396742c94c69ca6b21ea9.jpg" 
+                                        src="https://i.pinimg.com/736x/60/e4/5f/60e45f67c36e278dde0b3e3f8b09090a.jpg" 
                                         alt="Making noodles" 
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="rounded-2xl overflow-hidden h-64 shadow-lg border border-gray-700">
                                     <img 
-                                        src="https://i.pinimg.com/originals/3d/74/cd/3d74cdf60dd7a7838a4fb1162e099bb2.jpg" 
+                                        src="https://www.shutterstock.com/shutterstock/photos/2490925811/display_1500/stock-photo-anime-artistic-image-of-anime-style-ramen-shop-interior-wall-realistic-2490925811.jpg" 
                                         alt="Restaurant interior" 
                                         className="w-full h-full object-cover"
                                     />
@@ -202,14 +201,14 @@ function Home() {
                             <div className="space-y-4 mt-6">
                                 <div className="rounded-2xl overflow-hidden h-64 shadow-lg border border-gray-700">
                                     <img 
-                                        src="https://i.pinimg.com/originals/7c/9c/01/7c9c01b5b0b38789e501ca792e098e6d.jpg" 
+                                        src="https://i.pinimg.com/736x/f4/b7/96/f4b79623df981afba08475a4c183ea23.jpg" 
                                         alt="Chef preparing ramen" 
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="rounded-2xl overflow-hidden h-48 shadow-lg border border-gray-700">
                                     <img 
-                                        src="https://i.pinimg.com/originals/71/7d/0f/717d0f94d5193d92373d539d92bc3d3d.jpg" 
+                                        src="https://i.pinimg.com/736x/48/a0/a1/48a0a18242437a61fc78a9fa6109c0f7.jpg" 
                                         alt="Ingredients" 
                                         className="w-full h-full object-cover"
                                     />
@@ -288,7 +287,7 @@ function Home() {
                         </div>
                         <div className="w-full md:w-1/2 relative min-h-[300px]">
                             <img 
-                                src="https://i.pinimg.com/originals/e9/31/6a/e9316a3418f11b55b5d881a88c37e1f6.jpg" 
+                                src="https://i.pinimg.com/736x/10/c0/07/10c007e6562b402b5b90a2bbdb27867c.jpg" 
                                 alt="Ramen Special Offer" 
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
