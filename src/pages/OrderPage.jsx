@@ -3,131 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchAllProducts, selectAllProducts } from  '../features/productSlice';
-
-// const MENU_ITEMS = [
-//   {
-//     id: 'tonkotsu',
-//     name: 'Tonkotsu Ramen',
-//     description: 'Rich pork bone broth with tender chashu pork, ajitama egg, and green onions',
-//     price: 14.99,
-//     image: '/images/tonkotsu.jpg',
-//     category: 'ramen',
-//     featured: true,
-//     spiceLevel: 1,
-//     popular: true,
-//     dateAdded: '2025-01-15T12:30:00.000Z',
-//     inStock: true,
-//     tags: ['creamy', 'umami', 'classic'],
-//     ingredients: ['Pork bone broth', 'Chashu pork', 'Ajitama egg', 'Green onions', 'Nori', 'Bamboo shoots'],
-//     rating: 4.8,
-//     sales: 250
-//   },
-//   {
-//     id: 'spicy-miso',
-//     name: 'Spicy Miso Ramen',
-//     description: 'Hearty miso broth with spicy chili oil, ground pork, corn, butter, and bean sprouts',
-//     price: 15.99,
-//     image: '/images/spicy-miso.jpg',
-//     category: 'ramen',
-//     featured: true,
-//     spiceLevel: 3,
-//     popular: true,
-//     dateAdded: '2025-01-20T14:45:00.000Z',
-//     inStock: true,
-//     tags: ['spicy', 'rich', 'comforting'],
-//     ingredients: ['Miso broth', 'Spicy chili oil', 'Ground pork', 'Corn', 'Butter', 'Bean sprouts', 'Ajitama egg'],
-//     rating: 4.7,
-//     sales: 230
-//   },
-//   {
-//     id: 'shoyu',
-//     name: 'Shoyu Ramen',
-//     description: 'Classic soy sauce based broth with chicken chashu, menma, and spinach',
-//     price: 13.99,
-//     image: '/images/shoyu.jpg',
-//     category: 'ramen',
-//     featured: false,
-//     spiceLevel: 1,
-//     popular: false,
-//     dateAdded: '2025-01-10T09:20:00.000Z',
-//     inStock: true,
-//     tags: ['light', 'balanced', 'traditional'],
-//     ingredients: ['Soy sauce chicken broth', 'Chicken chashu', 'Menma', 'Spinach', 'Green onions', 'Naruto'],
-//     rating: 4.5,
-//     sales: 180
-//   },
-//   {
-//     id: 'tantanmen',
-//     name: 'Tantanmen',
-//     description: 'Creamy sesame broth with spicy minced pork, bok choy, and chili oil',
-//     price: 16.99,
-//     image: '/images/tantanmen.jpg',
-//     category: 'ramen',
-//     featured: false,
-//     spiceLevel: 4,
-//     popular: false,
-//     dateAdded: '2025-02-05T16:30:00.000Z',
-//     inStock: true,
-//     tags: ['spicy', 'nutty', 'rich'],
-//     ingredients: ['Sesame broth', 'Spicy minced pork', 'Bok choy', 'Chili oil', 'Sesame paste', 'Green onions'],
-//     rating: 4.6,
-//     sales: 150
-//   },
-//   {
-//     id: 'veggie',
-//     name: 'Veggie Delight Ramen',
-//     description: 'Vegetable broth with tofu, mushrooms, corn, and seasonal vegetables',
-//     price: 13.99,
-//     image: '/images/veggie.jpg',
-//     category: 'ramen',
-//     featured: false,
-//     spiceLevel: 0,
-//     popular: false,
-//     dateAdded: '2025-02-10T11:15:00.000Z',
-//     inStock: true,
-//     tags: ['vegetarian', 'healthy', 'light'],
-//     ingredients: ['Vegetable broth', 'Tofu', 'Shiitake mushrooms', 'Corn', 'Bamboo shoots', 'Yu choy'],
-//     rating: 4.4,
-//     sales: 120
-//   },
-//   {
-//     id: 'tsukemen',
-//     name: 'Tsukemen Dipping Noodles',
-//     description: 'Cold noodles served with rich dipping broth, pork, and ajitama egg',
-//     price: 16.99,
-//     image: '/images/tsukemen.jpg',
-//     category: 'specialty',
-//     featured: true,
-//     spiceLevel: 2,
-//     popular: true,
-//     dateAdded: '2025-03-01T10:00:00.000Z',
-//     inStock: true,
-//     tags: ['unique', 'concentrated', 'refreshing'],
-//     ingredients: ['Concentrated dipping broth', 'Cold noodles', 'Chashu pork', 'Ajitama egg', 'Lime', 'Green onions'],
-//     rating: 4.9,
-//     sales: 200
-//   },
-//   {
-//     id: 'maki-sushi',
-//     name: 'Maki Sushi',
-//     description: 'Maki rolls are the most recognizable form of sushi — vinegared rice and fillings (like cucumber, tuna, avocado, or crab) wrapped in a sheet of nori (seaweed) and sliced into bite-sized pieces. They can range from simple (one filling) to complex (specialty rolls).',
-//     price: 8,
-//     image: 'https://fra.cloud.appwrite.io/v1/storage/buckets/680cdea9001879fd10c6/files/680e87a9001763540dbf/view?project=680cdd90000983513641',
-//     category: 'sushi',
-//     featured: true,
-//     spiceLevel: 0,
-//     popular: true,
-//     dateAdded: '2025-04-27T19:38:17.373Z',
-//     inStock: true,
-//     ingredients: [],
-//     rating: 0,
-//     sales: 0,
-//     imageMeta: {
-//       bucketId: "680cdea9001879fd10c6",
-//       fileId: "680e87a9001763540dbf"
-//     }
-//   }
-// ];
+import categoryService from '../firebase/CategoryService';
 
 const TOPPINGS = [
   { id: 'extra-chashu', name: 'Extra Chashu', price: 3.50 },
@@ -142,15 +18,6 @@ const TOPPINGS = [
   { id: 'ginger', name: 'Extra Ginger', price: 0.75 },
 ];
 
-// Define common categories for our menu
-const MENU_CATEGORIES = [
-  { id: 'all', name: 'All Items' },
-  { id: 'ramen', name: 'Ramen' },
-  { id: 'specialty', name: 'Specialty' },
-  { id: 'sushi', name: 'Sushi' },
-  { id: 'vegetarian', name: 'Vegetarian' }
-];
-
 export default function OrderPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -158,6 +25,10 @@ export default function OrderPage() {
   const user = auth.userData;
   const productList = useSelector(selectAllProducts);
 
+  // Add state for categories
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cartItems, setCartItems] = useState([]);
   const [showCart, setShowCart] = useState(false);
@@ -169,8 +40,32 @@ export default function OrderPage() {
   const [customizationQuantity, setCustomizationQuantity] = useState(1);
 
   useEffect(() => {
-    dispatch(fetchAllProducts())
-  },[dispatch]);
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categoriesData = await categoryService.getAllCategories();
+        const activeCategories = categoriesData
+          .filter(category => category.active)
+          .map(category => ({
+            id: category.name.toLowerCase(),
+            name: category.name
+          }));
+          
+        setCategories([
+          { id: 'all', name: 'All Items' },
+          ...activeCategories
+        ]);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        setCategories([{ id: 'all', name: 'All Items' }]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
+    fetchCategories();
+    dispatch(fetchAllProducts());
+  }, [dispatch]);
 
   const filteredMenu = productList.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -209,7 +104,6 @@ export default function OrderPage() {
       ]);
     }
     
-    // Show the cart drawer when item is added
     setShowCart(true);
   };
   
@@ -246,23 +140,19 @@ export default function OrderPage() {
     }
     
     if (!user) {
-      // Redirect to sign in page if user is not authenticated
       navigate('/signin', { state: { returnUrl: '/order' } });
       return;
     }
     
-    // Navigate to checkout page
     navigate('/checkout', { state: { cartItems, total: cartTotal } });
   };
   
   const toggleItemExpansion = (itemId) => {
     if (expandedItemId === itemId) {
-      // Close the expanded item
       setExpandedItemId(null);
       setSelectedToppings([]);
       setCustomizationQuantity(1);
     } else {
-      // Open a new item
       setExpandedItemId(itemId);
       setSelectedToppings([]);
       setCustomizationQuantity(1);
@@ -376,7 +266,14 @@ export default function OrderPage() {
             
             {/* Category Tabs */}
             <div className="flex overflow-x-auto hide-scrollbar py-3 -mx-4 px-4 mt-3 space-x-2" style={hideScrollbarStyle}>
-              {MENU_CATEGORIES.map((category) => (
+              {categoriesLoading ? (
+                // Show loading indicators while categories are being fetched
+                <>
+                  <div className="px-4 py-2 bg-gray-800 rounded-full animate-pulse w-20 h-8"></div>
+                  <div className="px-4 py-2 bg-gray-800 rounded-full animate-pulse w-24 h-8"></div>
+                  <div className="px-4 py-2 bg-gray-800 rounded-full animate-pulse w-20 h-8"></div>
+                </>
+              ) : categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
@@ -550,7 +447,7 @@ export default function OrderPage() {
                                       
                                       {selectedToppings.some(item => item.id === topping.id) && (
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a 1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                         </svg>
                                       )}
                                     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // Add useLocation
 import { useDispatch, useSelector } from 'react-redux';
 import authService from '../../firebase/AuthService';
 import { signout as authSignout} from '../../features/authSlice';
@@ -10,6 +10,7 @@ export default function Header() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation(); // Get current location
     const profileDropdownRef = useRef(null);
     const cartDropdownRef = useRef(null);
     const status = useSelector((state) => state.auth.status);
@@ -49,6 +50,12 @@ export default function Header() {
             active: true
         },
     ]
+    
+    // Function to check if a nav item is currently active
+    const isActiveRoute = (path) => {
+        // Check if current location path matches the nav item's path
+        return location.pathname === path;
+    }
     
     useEffect(() => {
         function handleClickOutside(event) {
@@ -92,7 +99,7 @@ export default function Header() {
                     {/* Top Row - Logo and Action Buttons */}
                     <div className="flex justify-between items-center w-full">
                         {/* Logo */}
-                        <Link to='/' className="flex items-center">
+                        <Link to='/home' className="flex items-center">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500 to-red-500 flex items-center justify-center text-white font-bold text-xl">R</div>
                             <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-500">Ramen Paradise</span>
                         </Link>
@@ -105,7 +112,11 @@ export default function Header() {
                                         <li key={item.name}>
                                             <button 
                                                 onClick={()=> navigate(item.slug)}
-                                                className="text-center inline-block px-4 py-2 duration-300 hover:bg-gray-800 hover:text-yellow-400 rounded-lg"
+                                                className={`text-center inline-block px-4 py-2 duration-300 rounded-lg
+                                                    ${isActiveRoute(item.slug) 
+                                                        ? 'bg-gray-800 text-yellow-400 font-medium' 
+                                                        : 'hover:bg-gray-800 hover:text-yellow-400'
+                                                    }`}
                                             >
                                                 {item.name}
                                             </button>
@@ -114,7 +125,8 @@ export default function Header() {
                                 )}
                                 <li className="ml-4">
                                     <button 
-                                        className="bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-bold py-2 px-6 rounded-lg transform transition duration-300 hover:-translate-y-1"
+                                        className={`bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-bold py-2 px-6 rounded-lg transform transition duration-300 hover:-translate-y-1
+                                            ${isActiveRoute('/order') ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''}`}
                                         onClick={() => navigate('/order')}
                                     >
                                         Order Now
@@ -328,7 +340,11 @@ export default function Header() {
                                                 navigate(item.slug);
                                                 setIsMenuOpen(false);
                                             }}
-                                            className='w-full text-left inline-block px-4 py-2 duration-300 hover:bg-gray-800 hover:text-yellow-400 rounded-lg my-1'
+                                            className={`w-full text-left inline-block px-4 py-2 duration-300 rounded-lg my-1
+                                                ${isActiveRoute(item.slug)
+                                                    ? 'bg-gray-800 text-yellow-400 font-medium' 
+                                                    : 'hover:bg-gray-800 hover:text-yellow-400'
+                                                }`}
                                         >
                                             {item.name}
                                         </button>
@@ -337,7 +353,8 @@ export default function Header() {
                             )}
                             <li className="my-1">
                                 <button 
-                                    className="w-full bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-bold py-2 px-6 rounded-lg transform transition duration-300 hover:-translate-y-1"
+                                    className={`w-full bg-gradient-to-r from-yellow-500 to-red-500 hover:from-yellow-600 hover:to-red-600 text-white font-bold py-2 px-6 rounded-lg transform transition duration-300 hover:-translate-y-1
+                                        ${isActiveRoute('/order') ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''}`}
                                     onClick={() => {
                                         navigate('/order');
                                         setIsMenuOpen(false);
