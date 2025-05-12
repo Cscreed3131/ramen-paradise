@@ -31,17 +31,17 @@
   import SigninPage from './pages/SigninPage.jsx'
   import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
   import UserProfilePage from './pages/UserProfilePage.jsx'
-import OrderPage from './pages/OrderPage.jsx'
-import CategoryManagement from './pages/admin/components/subComponents/CategoryManagement.jsx'
+  import OrderPage from './pages/OrderPage.jsx'
+  import CategoryManagement from './pages/admin/components/subComponents/CategoryManagement.jsx'
+import CheckoutPage from './pages/CheckoutPage.jsx'
 
   const router = createBrowserRouter([
-    // Main public routes
     {
       path: '/',
       element: <App />,
       children: [
         {
-          index: true, // Default route
+          index: true,
           element: <Home />,
         },
         {
@@ -64,13 +64,15 @@ import CategoryManagement from './pages/admin/components/subComponents/CategoryM
           path: 'offers',
           element: <Offers />,
         },
-        
-        
       ]
     },
     {
       path: 'order',
       element: <OrderPage />,
+    },
+    {
+      path: 'checkout',
+      element: <CheckoutPage />,
     },
     {
       path: 'user-profile',
@@ -105,15 +107,13 @@ import CategoryManagement from './pages/admin/components/subComponents/CategoryM
           element: <AdminPage />,
           children: [
             {
-              index: true, // Default admin route
+              index: true,
               element: <Dashboard />
             },
             {
               path: 'dashboard',
               element: <Dashboard />
             },
-            
-            // OPTION 1: Flattened product routes (recommended for simplicity)
             {
               path: 'products',
               element: <Products />
@@ -142,8 +142,6 @@ import CategoryManagement from './pages/admin/components/subComponents/CategoryM
               path: 'products/categories',
               element: <CategoryManagement />
             },
-            
-            // Other main admin routes
             {
               path: 'orders',
               element: <Orders />
@@ -156,8 +154,6 @@ import CategoryManagement from './pages/admin/components/subComponents/CategoryM
               path: 'restaurants',
               element: <Restaurants />
             },
-            
-            // Account-related routes
             {
               path: 'settings',
               element: <Settings />
@@ -170,8 +166,6 @@ import CategoryManagement from './pages/admin/components/subComponents/CategoryM
         }
       ]
     },
-    
-    // 404 route - catch all unmatched routes
     {
       path: '*',
       element: <div className="flex h-screen items-center justify-center bg-gray-900">

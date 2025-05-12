@@ -25,7 +25,6 @@ export default function OrderPage() {
   const user = auth.userData;
   const productList = useSelector(selectAllProducts);
 
-  // Add state for categories
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   
@@ -140,7 +139,7 @@ export default function OrderPage() {
     }
     
     if (!user) {
-      navigate('/signin', { state: { returnUrl: '/order' } });
+      navigate('/auth/signin', { state: { returnUrl: '/order' } });
       return;
     }
     
