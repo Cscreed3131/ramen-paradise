@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
           {/* Back to Login */}
           <div className="text-center text-gray-400">
             <Link
-              to="/signin"
+              to="/auth/signin"
               className="font-medium text-yellow-400 hover:text-yellow-300 transition-colors focus:outline-none"
             >
               Back to sign in
